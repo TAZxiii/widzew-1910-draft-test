@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Test 101.1 / 102.1</title>
+<style>
+body{margin:0;background:#101010;color:#eee;font-family:Arial,sans-serif}main{max-width:900px;margin:auto;padding:20px}.box{background:#191919;border:1px solid #333;border-radius:14px;padding:16px;margin:12px 0}h1,h2{margin-top:0}.controls{display:flex;gap:8px;flex-wrap:wrap}.controls button{padding:11px 14px;border:0;border-radius:8px;font-weight:bold;cursor:pointer;background:#292929;color:#fff}.controls button:hover{background:#3a3a3a}.result{font:14px Consolas,monospace;white-space:pre-wrap;line-height:1.5}.ok{font-weight:bold}.note{color:#aaa;font-size:13px;line-height:1.5}table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid #333;text-align:left}
+</style>
+</head>
+<body><main>
+<div class="box"><h1>Test logiki 101.1 / 102.1</h1><div class="note">Ten tester nakłada nową logikę tylko na stronie testowej. Nie zmienia jeszcze silnika 6E. Sukces używa wag: 99.7 = 80, 99.3 = 30, 99.4 = 30, a porażka zachowuje istniejącą szansę strzału zależną od Z oraz podział 45:55.</div></div>
+<div class="box"><h2>Pojedynczy test</h2><div class="controls"><button onclick="single('101.1',true)">101.1 — sukces</button><button onclick="single('101.1',false)">101.1 — porażka</button><button onclick="single('102.1',true)">102.1 — sukces</button><button onclick="single('102.1',false)">102.1 — porażka</button></div><div id="single" class="result" style="margin-top:15px">Wybierz test.</div></div>
+<div class="box"><h2>Test statystyczny — 10 000 prób</h2><div class="controls"><button onclick="batch('101.1',true)">101.1 — sukces ×10 000</button><button onclick="batch('102.1',true)">102.1 — sukces ×10 000</button><button onclick="batch('101.1',false)">101.1 — porażka ×10 000</button><button onclick="batch('102.1',false)">102.1 — porażka ×10 000</button></div><div id="batch" class="result" style="margin-top:15px">Wybierz test.</div></div>
+<div class="box"><h2>Oczekiwane wyniki</h2><table><tr><th>Akcja</th><th>Wynik</th><th>Dalszy event</th></tr><tr><td>101.1 sukces</td><td>99.7 najczęściej / 99.3, 99.4 rzadko</td><td>101 lub 108 / koniec</td></tr><tr><td>102.1 sukces</td><td>99.7 najczęściej / 99.3, 99.4 rzadko</td><td>102 lub 108 / koniec</td></tr><tr><td>101.1 porażka</td><td>99.6 / 99.2 / 99.1</td><td>101 lub 108 / koniec / 110</td></tr><tr><td>102.1 porażka</td><td>99.6 / 99.2 / 99.1</td><td>102 lub 108 / koniec / 110</td></tr></table></div>
+<script src="./season-match-engine.js?v=15"></script>
+<script src="./season-match-engine-6c-extension.js?v=15"></script>
+<script src="./season-match-engine-6d-extension.js?v=15"></script>
+<script src="./season-match-engine-6e-extension.js?v=15"></script>
+<script>
+(function(){'use strict';
+const E=window.WidzewSeasonMatchEngine;
+const original=E.transitionForAction;
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const rnd=()=>Math.random();
+function route(id,z){const n=Number(id);return n===101?(Number(z)<=16?108:101):(Number(z)<=16?108:102)}
+function correctedTransition(id,success,z,r){
+ const s=String(id), rr=r||rnd;
+ if(s!=='101.1'&&s!=='102.1') return original(id,success,z,rr);
+ const nextBase=Number(s.split('.')[0]);
+ if(success){
+   const x=rr()*120;
+   if(x<80) return {message:'99.7',nextEvent:route(nextBase,z)};
+   if(x<110) return {message:'99.3',end:true};
+   return {message:'99.4',end:true};
+ }
+ const shotChance=typeof E.defensiveShotChance==='function'?E.defensiveShotChance(z):0;
+ if(rr()<clamp(Number(shotChance),0,1)){
+   const shot=typeof E.rollDefensiveShot==='function'?E.rollDefensiveShot(z,rr):((rr()<.45)?'99.1':'99.2');
+   return shot==='99.1'?{message:'99.1',nextEvent:110}:{message:'99.2',end:true};
+ }
+ return {message:'99.6',nextEvent:route(nextBase,z)};
+}
+function forced(r){return ()=>r;}
+window.test1011_1021={correctedTransition};
+function single(id,success){
+ const z=Number(prompt('Podaj Z (1–70):',id==='101.1'?'25':'25'));
+ if(!Number.isFinite(z)||z<1||z>70)return;
+ const t=correctedTransition(id,success,z,rnd);
+ document.getElementById('single').textContent=JSON.stringify({action:id,success,z,transition:t},null,2);
+}
+function batch(id,success){
+ const z=25,N=10000,c={};
+ for(let i=0;i<N;i++){const t=correctedTransition(id,success,z,rnd);const key=t.message+' → '+(t.end?'koniec':t.nextEvent);c[key]=(c[key]||0)+1}
+ let out=id+' | '+(success?'SUKCES':'PORAŻKA')+' | Z='+z+' | N='+N+'\n';
+ Object.keys(c).sort().forEach(k=>out+=k+': '+c[k]+' ('+(c[k]/N*100).toFixed(2)+'%)\n');
+ document.getElementById('batch').textContent=out;
+}
+})();
+</script>
+</main></body></html>
