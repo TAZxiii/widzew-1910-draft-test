@@ -1,0 +1,26 @@
+{
+  "OF": {
+    "1": {"id": 1, "name": "Zawodnik XY ma piłkę Z m od bramki przeciwnika"},
+    "2": {"id": 2, "name": "Zawodnik XY znajduje się na skrzydle Z m od bramki przeciwnika"},
+    "3": {"id": 3, "name": "Zawodnik XY wykonuje rzut rożny"},
+    "4": {"id": 4, "name": "Zawodnik XY wykonuje rzut wolny Z m od bramki przeciwnika"},
+    "5": {"id": 5, "name": "Zawodnik XY wykonuje aut Z m od bramki przeciwnika"},
+    "6": {"id": 6, "name": "Zawodnik XY wykonuje aut Z m od bramki przeciwnika"},
+    "7": {"id": 7, "name": "Zawodnik XY wykonuje rzut wolny"},
+    "8": {"id": 8, "name": "Piłka spada w kierunku Zawodnika XY Z m od bramki przeciwnika"}
+  },
+  "DEF": {
+    "101": {"id": 101, "name": "Przeciwnik ma piłkę Z m od Twojej bramki"},
+    "102": {"id": 102, "name": "Przeciwnik znajduje się na skrzydle Z m od Twojej bramki"},
+    "103": {"id": 103, "name": "Przeciwnik wykonuje rzut rożny"},
+    "104": {"id": 104, "name": "Przeciwnik wykonuje rzut wolny Z m od Twojej bramki"},
+    "105": {"id": 105, "name": "Przeciwnik wykonuje aut Z m od Twojej bramki"},
+    "106": {"id": 106, "name": "Przeciwnik wykonuje aut Z m od Twojej bramki"},
+    "107": {"id": 107, "name": "Przeciwnik wykonuje rzut karny"},
+    "108": {"id": 108, "name": "Piłka spada w kierunku przeciwnika Z m od Twojej bramki"}
+  },
+  "special": {
+    "10": {"id": 10, "name": "strzał celny (Widzewa)"},
+    "110": {"id": 110, "name": "strzał celny (przeciwnika)"}
+  }
+}
