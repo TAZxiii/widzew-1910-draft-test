@@ -262,6 +262,7 @@ h1 span {
 
 .mode-title {
     width: min(320px, 100%);
+    height: 82px;
     min-height: 82px;
     padding: 8px 16px;
     border: 0;
@@ -273,6 +274,10 @@ h1 span {
     font-weight: 900;
     letter-spacing: 1px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     transition: transform 0.2s ease, filter 0.2s ease;
 }
 
