@@ -54,7 +54,9 @@ document.addEventListener("DOMContentLoaded", () => {
         excluded: false,
         started: false,
         audio: null,
-        candidates: Array.from({ length: 20 }, (_, i) => `data/sound/menu/${i + 1}.mp3`),
+        candidates: Array.from({ length: 5 }, (_, i) => `data/sound/menu/${i + 2}.mp3`),
+        specialTrack: "data/sound/menu/1.mp3",
+        specialUnlocked: localStorage.getItem("widzewMusicEaster1910") === "true",
 
         async start() {
             if (this.excluded || this.started) return;
@@ -78,6 +80,26 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             this.started = false;
+        },
+
+        async playSpecial() {
+            if (this.excluded) return;
+            this.stop();
+            this.specialUnlocked = true;
+            localStorage.setItem("widzewMusicEaster1910", "true");
+
+            const audio = new Audio(this.specialTrack);
+            audio.loop = true;
+            audio.volume = this.volume;
+
+            try {
+                await audio.play();
+                this.audio = audio;
+                this.started = true;
+            } catch (error) {
+                audio.pause();
+                this.started = false;
+            }
         },
 
         stop() {
@@ -107,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
         this;
         const volume = Math.min(1, Math.max(0, Number(value) || 0));
         gameMusic.volume = volume * MENU_MUSIC_NATIVE_VOLUME;
-        if (gameMusic.audio) gameMusic.audio.volume = volume;
+        if (gameMusic.audio) gameMusic.audio.volume = gameMusic.volume;
         localStorage.setItem("widzewMusicVolume", String(volume));
     };
 
@@ -122,6 +144,39 @@ document.addEventListener("DOMContentLoaded", () => {
     gameMusic.setExcluded = value => originalSetExcluded(value);
 
     gameMusic.volume = audioSettings.musicVolume * MENU_MUSIC_NATIVE_VOLUME;
+
+    // EASTER EGG: kod 1910 działa wyłącznie na ekranie głównym.
+    const easterEggSequence = ["1", "9", "1", "0"];
+    let easterEggProgress = [];
+    const easterEggModal = document.getElementById("musicEasterEggModal");
+    const closeEasterEggModal = document.getElementById("closeMusicEasterEgg");
+
+    const closeEasterEgg = () => easterEggModal?.classList.add("hidden");
+    closeEasterEggModal?.addEventListener("click", closeEasterEgg);
+    easterEggModal?.addEventListener("click", event => {
+        if (event.target === easterEggModal) closeEasterEgg();
+    });
+
+    document.addEventListener("keydown", event => {
+        const startScreen = document.querySelector(".start-screen");
+        if (!startScreen || startScreen.classList.contains("hidden")) {
+            easterEggProgress = [];
+            return;
+        }
+        if (event.ctrlKey || event.altKey || event.metaKey) return;
+        if (!["1", "9", "0"].includes(event.key)) return;
+
+        easterEggProgress.push(event.key);
+        if (easterEggProgress.length > easterEggSequence.length) {
+            easterEggProgress.shift();
+        }
+
+        if (easterEggProgress.join("") === easterEggSequence.join("")) {
+            easterEggProgress = [];
+            gameMusic.playSpecial();
+            easterEggModal?.classList.remove("hidden");
+        }
+    });
 
     window.__widzewAudioSettings = audioSettings;
     window.__widzewGameMusic = gameMusic;
