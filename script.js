@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
         audio: null,
         candidates: Array.from({ length: 5 }, (_, i) => `data/sound/menu/${i + 2}.mp3`),
         specialTrack: "data/sound/menu/1.mp3",
-        specialUnlocked: localStorage.getItem("widzewMusicEaster1910") === "true",
+        specialUnlocked: false,
 
         async start() {
             if (this.excluded || this.started) return;
@@ -86,7 +86,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (this.excluded) return;
             this.stop();
             this.specialUnlocked = true;
-            localStorage.setItem("widzewMusicEaster1910", "true");
 
             const audio = new Audio(this.specialTrack);
             audio.loop = true;
