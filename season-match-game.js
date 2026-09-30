@@ -18,7 +18,36 @@
   function slug(n){const m={'Legia Warszawa':'legia_warszawa','Lech Poznań':'lech_poznan','Górnik Zabrze':'gornik_zabrze','Jagiellonia Białystok':'jagiellonia_bialystok','Raków Częstochowa':'rakow_czestochowa','GKS Katowice':'gks_katowice','Pogoń Szczecin':'pogon_szczecin','Cracovia':'cracovia','Piast Gliwice':'piast_gliwice','Korona Kielce':'korona_kielce','Motor Lublin':'motor_lublin','Radomiak Radom':'radomiak_radom','Wieczysta Kraków':'wieczysta_krakow','Wisła Kraków':'wisla_krakow','Wisła Płock':'wisla_plock','Śląsk Wrocław':'slask_wroclaw','Zagłębie Lubin':'zaglebie_lubin'};return m[n]||n.toLowerCase().replace(/[ąćęłńóśźż]/g,c=>({ą:'a',ć:'c',ę:'e',ł:'l',ń:'n',ó:'o',ś:'s',ź:'z',ż:'z'}[c])).replace(/\s+/g,'_')}
   function createUI(opponent){const old=document.getElementById('wsm-overlay');if(old)old.remove();const root=document.createElement('div');root.id='wsm-overlay';const widzewHome=opponent.home,leftTeam=widzewHome?{name:'Widzew Łódź',logo:'./data/logos/widzew_lodz.png'}:opponent,rightTeam=widzewHome?opponent:{name:'Widzew Łódź',logo:'./data/logos/widzew_lodz.png'};root.innerHTML=`<div class="wsm-wrap"><div class="wsm-box"><button class="wsm-close" id="wsm-close" style="display:none">× POWRÓT</button><div class="wsm-score"><div class="wsm-team"><img src="${leftTeam.logo}"><span>${leftTeam.name}</span></div><div><div id="wsm-score" class="wsm-scoreline">0 : 0</div><div id="wsm-minute" class="wsm-minute">—'</div></div><div class="wsm-team"><img src="${rightTeam.logo}"><span>${rightTeam.name}</span></div></div></div><div class="wsm-layout"><section><div class="wsm-box"><h2>Aktualna sytuacja</h2><div id="wsm-event" class="wsm-event">Przygotowanie meczu…</div><div id="wsm-meta" class="wsm-meta"></div><div id="wsm-actions" class="wsm-actions"></div><div id="wsm-player-choice"></div></div><div class="wsm-box"><h3>Przebieg meczu</h3><div id="wsm-feed" class="wsm-feed"></div></div></section><aside><div class="wsm-box"><div class="wsm-status" id="wsm-status">Ładowanie silnika…</div></div><div class="wsm-box"><h3>Strzelcy Widzewa</h3><div id="wsm-scorers">Brak bramek.</div></div><div class="wsm-box" style="display:none"><h3>Debug</h3><div id="wsm-debug" class="wsm-debug">—</div></div></aside></div></div>`;document.body.appendChild(root);ui={root};document.getElementById('wsm-close').onclick=close}
   function stopClock(){if(clockTimer){clearInterval(clockTimer);clockTimer=null}if(match)match.clockRunning=false}
-  function runClockTo(target,onReached){if(!match)return;const goal=Math.max(0,Math.min(90,Number(target)||0));stopClock();if(match.clockMinute>=goal){match.minute=goal;renderScore();onReached();return}match.clockRunning=true;setText('wsm-status',`Czas gry: ${match.clockMinute}' — trwa odliczanie do ${goal}'...`);clockTimer=setInterval(()=>{if(!match||match.finished){stopClock();return}match.clockMinute=Math.min(goal,match.clockMinute+1);match.minute=match.clockMinute;renderScore();if(match.clockMinute>=goal){stopClock();onReached()}},100)}
+  function runClockTo(target,onReached){if(!match)return;const goal=Math.max(0,Math.min(90,Number(target)||0));stopClock();if(match.clockMinute>=goal){match.minute=goal;renderScore();onReached();return}match.clockRunning=true;setText('wsm-status',`Czas gry: ${match.clockMinute}' — trwa odliczanie do ${goal}'...`);clockTimer=setInterval(()=>{if(!match||match.finished){stopClock();return}match.clockMinute=Math.min(goal,match.clockMinute+1);match.minute=match.clockMinute;renderScore();if(match.clockMinute===1)crowdIntroAudio.start();if(match.clockMinute>=goal){stopClock();onReached()}},100)}
+  const crowdIntroAudio = {
+    audio: null,
+    played: false,
+    start(){
+      if(this.played) return;
+      this.played = true;
+      const settings = window.__widzewAudioSettings || {};
+      const audio = new Audio('./data/sound/crowd/1.mp3');
+      const effectsVolume = Number(settings.effectsVolume);
+      const baseVolume = Math.min(1, Math.max(0, (Number.isFinite(effectsVolume) ? effectsVolume : 0.7) * 0.30));
+      audio.volume = settings.effectsEnabled === false ? 0 : baseVolume;
+      this.audio = audio;
+      audio.play().catch(error => console.warn('Nie udało się uruchomić crowd/1.mp3:', error));
+      audio.addEventListener('ended', () => { this.audio = null; }, {once:true});
+    },
+    applyVolume(){
+      if(!this.audio) return;
+      const settings = window.__widzewAudioSettings || {};
+      const effectsVolume = Number(settings.effectsVolume);
+      const baseVolume = Math.min(1, Math.max(0, (Number.isFinite(effectsVolume) ? effectsVolume : 0.7) * 0.30));
+      this.audio.volume = settings.effectsEnabled === false ? 0 : baseVolume;
+    },
+    stop(){
+      if(this.audio){ this.audio.pause(); this.audio.currentTime=0; this.audio=null; }
+      this.played = false;
+    }
+  };
+  window.__widzewCrowdIntroAudio = crowdIntroAudio;
+
   const crowdAudio = {
     audio: null,
     baseVolume(){
@@ -55,7 +84,7 @@
   };
   window.__widzewCrowdAudio = crowdAudio;
 
-  function close(){if(!match?.finished)return;stopClock();crowdAudio.stop();document.getElementById('wsm-overlay')?.remove();started=false;match=null;ui=null;if(window.setGameMusicExcluded)window.setGameMusicExcluded(false)}
+  function close(){if(!match?.finished)return;stopClock();crowdAudio.stop();crowdIntroAudio.stop();document.getElementById('wsm-overlay')?.remove();started=false;match=null;ui=null;if(window.setGameMusicExcluded)window.setGameMusicExcluded(false)}
   const esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
   const setText=(id,text)=>{const e=document.getElementById(id);if(e)e.textContent=text};
   function feed(text,minute){const e=document.getElementById('wsm-feed');if(e)e.insertAdjacentHTML('afterbegin',`<div class="wsm-row"><b>${minute!=null?esc(minute)+"' ":''}</b>${esc(text)}</div>`)}
@@ -89,7 +118,7 @@
   function showHalftime(){stopClock();setText('wsm-event','KONIEC I POŁOWY');setText('wsm-meta','');document.getElementById('wsm-actions').innerHTML='';document.getElementById('wsm-player-choice').innerHTML='';setText('wsm-status','Przerwa. Kliknij, aby rozpocząć drugą połowę.');const box=document.getElementById('wsm-status');const b=document.createElement('button');b.className='wsm-primary';b.textContent='▶ DRUGA POŁOWA';b.onclick=()=>{b.remove();finishHalf()};box.appendChild(b);const wrap=document.querySelector('#wsm-overlay .wsm-wrap');const layout=wrap?.querySelector('.wsm-layout');if(window.matchMedia('(max-width:700px)').matches&&wrap&&layout){b.classList.add('wsm-halftime-mobile');wrap.insertBefore(b,layout);b.style.display='block';b.style.width='100%';b.style.margin='0 0 10px 0';b.style.textAlign='center';b.style.position='sticky';b.style.top='0';b.style.zIndex='100000'}}
   function endSequence(){match.current=null;match.player=null;match.shotPlayer=null;match.lastActionPlayer=null;match.k={eventGroup:null,repeatCount:0,k:0};const next=match.plan[match.planIndex+1];if(match.half===1&&(!next||next.minute>45)){runClockTo(match.firstHalfEnd||45,showHalftime);return}if(match.half===2&&!next){runClockTo(match.secondHalfEnd||90,finishMatch);return}advance()}
   function finishHalf(){stopClock();match.half=2;match.clockMinute=45;match.minute=45;match.planIndex=match.plan.findIndex(x=>x.minute>45);renderScore();if(match.planIndex<0)runClockTo(match.secondHalfEnd||90,finishMatch);else startCurrentEvent()}
-  function finishMatch(){stopClock();crowdAudio.stop();match.current=null;match.finished=true;setText('wsm-event','KONIEC CZASU GRY');setText('wsm-meta','');setText('wsm-status','Mecz zakończony.');feed('KONIEC CZASU GRY',90);renderScore();renderScorers();const back=document.getElementById('wsm-close');if(back){back.style.display='block';back.textContent='← WRÓĆ DO SEZONU'}if(window.seasonGameState){const round=Number(window.seasonGameState.currentRound),result={round,opponent:match.opponent.name,home:match.opponent.home,gf:match.score.widzew,ga:match.score.opponent,scorers:match.scorers.map(s=>({minute:s.minute,type:s.type||'widzew',name:s.player,player:s.playerRef||null}))};window.seasonGameState.widzewResults=Array.isArray(window.seasonGameState.widzewResults)?window.seasonGameState.widzewResults.filter(x=>Number(x.round)!==round):[];window.seasonGameState.widzewResults.push(result);
+  function finishMatch(){stopClock();crowdAudio.stop();crowdIntroAudio.stop();match.current=null;match.finished=true;setText('wsm-event','KONIEC CZASU GRY');setText('wsm-meta','');setText('wsm-status','Mecz zakończony.');feed('KONIEC CZASU GRY',90);renderScore();renderScorers();const back=document.getElementById('wsm-close');if(back){back.style.display='block';back.textContent='← WRÓĆ DO SEZONU'}if(window.seasonGameState){const round=Number(window.seasonGameState.currentRound),result={round,opponent:match.opponent.name,home:match.opponent.home,gf:match.score.widzew,ga:match.score.opponent,scorers:match.scorers.map(s=>({minute:s.minute,type:s.type||'widzew',name:s.player,player:s.playerRef||null}))};window.seasonGameState.widzewResults=Array.isArray(window.seasonGameState.widzewResults)?window.seasonGameState.widzewResults.filter(x=>Number(x.round)!==round):[];window.seasonGameState.widzewResults.push(result);
         window.seasonGameState.playedMatchCount = Number(window.seasonGameState.playedMatchCount || 0) + 1;
         // Zapisz rozegrany mecz do stabilnej bazy natychmiast, zanim użytkownik przejdzie dalej.
         // Dzięki temu wynik/strzelcy z trybu „Zagraj mecz” nie mogą zostać zastąpieni symulacją.
