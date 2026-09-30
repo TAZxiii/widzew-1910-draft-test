@@ -137,6 +137,19 @@
       const coachStrength = window.__widzewGameMode === "player"
         ? 0
         : (Number.isFinite(Number(window.__widzewCoachStrength)) ? Number(window.__widzewCoachStrength) : 0);
-      const input={home:opponent.home,widzew:{overall:avg,players:xi},opponent:{overall:opponentOverall,charakter:opponentCharacter},coachStrength};match={opponent,xi,opponentStats:{defensywa:50,szybkosc:50,podania:50,atak:50,zaangazowanie:50,kreatywnosc:50,strzal:50,ogolna:opponentOverall,graNogami:50,piastkowanie:50,robinsonada:50,br:50},score:{widzew:0,opponent:0},scorers:[],minute:0,clockMinute:0,clockRunning:false,half:1,plan:buildPlan(input),planIndex:0,current:null,player:null,receiver:null,lastActionPlayer:null,shotPlayer:null,resolving:false,finished:false,firstHalfEnd:45+Math.floor(Math.random()*5)+1,secondHalfEnd:90+Math.floor(Math.random()*8)+1,k:{eventGroup:null,repeatCount:0,k:0}};setText('wsm-status',`Mecz rozpoczęty · ${db.season||''} · skład: ${xi.length} zawodników`);feed(`Mecz: ${opponent.home?'Widzew Łódź – '+opponent.name:opponent.name+' – Widzew Łódź'}`);startCurrentEvent()}catch(err){setText('wsm-event','Nie udało się uruchomić meczu.');setText('wsm-status',err.message);document.getElementById('wsm-status').classList.add('wsm-error');console.error(err)}}
+      const input={home:opponent.home,widzew:{overall:avg,players:xi},opponent:{overall:opponentOverall,charakter:opponentCharacter},coachStrength};match={opponent,xi,opponentStats:{defensywa:50,szybkosc:50,podania:50,atak:50,zaangazowanie:50,kreatywnosc:50,strzal:50,ogolna:opponentOverall,graNogami:50,piastkowanie:50,robinsonada:50,br:50},score:{widzew:0,opponent:0},scorers:[],minute:0,clockMinute:0,clockRunning:false,half:1,plan:buildPlan(input),planIndex:0,current:null,player:null,receiver:null,lastActionPlayer:null,shotPlayer:null,resolving:false,finished:false,firstHalfEnd:45+Math.floor(Math.random()*5)+1,secondHalfEnd:90+Math.floor(Math.random()*8)+1,k:{eventGroup:null,repeatCount:0,k:0}};setText('wsm-status',`Gotowy do rozpoczęcia · ${db.season||''} · skład: ${xi.length} zawodników`);feed(`Mecz: ${opponent.home?'Widzew Łódź – '+opponent.name:opponent.name+' – Widzew Łódź'}`);
+      setText('wsm-event','GOTOWI? ROZPOCZYNAMY MECZ!');
+      setText('wsm-meta','Kliknij przycisk poniżej, aby rozpocząć spotkanie.');
+      const actionsBox=document.getElementById('wsm-actions');
+      actionsBox.innerHTML='';
+      const startButton=document.createElement('button');
+      startButton.className='wsm-action';
+      startButton.style.gridColumn='1 / -1';
+      startButton.style.textAlign='center';
+      startButton.style.fontWeight='900';
+      startButton.style.fontSize='18px';
+      startButton.textContent='▶ ROZPOCZNIJ MECZ';
+      startButton.onclick=()=>{startButton.remove();setText('wsm-event','');setText('wsm-meta','');setText('wsm-status','Mecz rozpoczęty.');startCurrentEvent();};
+      actionsBox.appendChild(startButton)}catch(err){setText('wsm-event','Nie udało się uruchomić meczu.');setText('wsm-status',err.message);document.getElementById('wsm-status').classList.add('wsm-error');console.error(err)}}
   document.addEventListener('click',e=>{const b=e.target?.closest?.('#playMatchButton');if(!b)return;e.preventDefault();e.stopImmediatePropagation();start()},true)
 })();
