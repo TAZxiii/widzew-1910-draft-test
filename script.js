@@ -118,9 +118,9 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const audioSettings = {
-        musicEnabled: localStorage.getItem("widzewMusicEnabled") !== "false",
+        musicEnabled: false,
         musicVolume: Math.min(1, Math.max(0, Number(localStorage.getItem("widzewMusicVolume") ?? "0.35"))),
-        effectsEnabled: localStorage.getItem("widzewEffectsEnabled") !== "false",
+        effectsEnabled: false,
         effectsVolume: Math.min(1, Math.max(0, Number(localStorage.getItem("widzewEffectsVolume") ?? "0.7")))
     };
 
