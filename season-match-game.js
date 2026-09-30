@@ -151,8 +151,13 @@
       const baseVolume = Math.min(1, Math.max(0, (Number.isFinite(effectsVolume) ? effectsVolume : 0.7) * 0.30));
       audio.volume = settings.effectsEnabled === false ? 0 : baseVolume;
       this.audio = audio;
+      audio.addEventListener('ended', () => {
+        this.audio = null;
+        const minute = Number(match?.minute || 0);
+        if(minute >= 1 && minute <= 69) crowdGoalFollowAudio.play(6);
+        else if(minute >= 70) crowdGoalFollowAudio.play(2);
+      }, {once:true});
       audio.play().catch(error => console.warn('Nie udało się uruchomić crowd/5.mp3:', error));
-      audio.addEventListener('ended', () => { this.audio = null; }, {once:true});
     },
     applyVolume(){
       if(!this.audio) return;
@@ -166,6 +171,32 @@
     }
   };
   window.__widzewCrowdGoalAudio = crowdGoalAudio;
+
+  const crowdGoalFollowAudio = {
+    audio: null,
+    play(file){
+      this.stop();
+      const settings = window.__widzewAudioSettings || {};
+      const audio = new Audio(`./data/sound/crowd/${file}.mp3`);
+      const effectsVolume = Number(settings.effectsVolume);
+      const baseVolume = Math.min(1, Math.max(0, (Number.isFinite(effectsVolume) ? effectsVolume : 0.7) * 0.30));
+      audio.volume = settings.effectsEnabled === false ? 0 : baseVolume;
+      this.audio = audio;
+      audio.play().catch(error => console.warn(`Nie udało się uruchomić crowd/${file}.mp3:`, error));
+      audio.addEventListener('ended', () => { this.audio = null; }, {once:true});
+    },
+    applyVolume(){
+      if(!this.audio) return;
+      const settings = window.__widzewAudioSettings || {};
+      const effectsVolume = Number(settings.effectsVolume);
+      const baseVolume = Math.min(1, Math.max(0, (Number.isFinite(effectsVolume) ? effectsVolume : 0.7) * 0.30));
+      this.audio.volume = settings.effectsEnabled === false ? 0 : baseVolume;
+    },
+    stop(){
+      if(this.audio){ this.audio.pause(); this.audio.currentTime=0; this.audio=null; }
+    }
+  };
+  window.__widzewCrowdGoalFollowAudio = crowdGoalFollowAudio;
 
   const crowdFinalAudio = {
     audio: null,
