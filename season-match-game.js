@@ -107,7 +107,7 @@
   };
   window.__widzewCrowdAudio = crowdAudio;
 
-  function close(){if(!match?.finished)return;stopClock();crowdAudio.stop();crowdIntroAudio.stop();document.getElementById('wsm-overlay')?.remove();started=false;match=null;ui=null;if(window.setGameMusicExcluded)window.setGameMusicExcluded(false)}
+  function close(){if(!match?.finished)return;stopClock();crowdAudio.stop();crowdIntroAudio.stop();crowdActionAudio.stop();crowdGoalAudio.stop();crowdGoalFollowAudio.stop();crowdFinalAudio.stop();document.getElementById('wsm-overlay')?.remove();started=false;match=null;ui=null;if(window.setGameMusicExcluded)window.setGameMusicExcluded(false)}
   const esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
   const setText=(id,text)=>{const e=document.getElementById(id);if(e)e.textContent=text};
   function feed(text,minute){const e=document.getElementById('wsm-feed');if(e)e.insertAdjacentHTML('afterbegin',`<div class="wsm-row"><b>${minute!=null?esc(minute)+"' ":''}</b>${esc(text)}</div>`)}
@@ -198,6 +198,32 @@
   };
   window.__widzewCrowdGoalFollowAudio = crowdGoalFollowAudio;
 
+  const crowdActionAudio = {
+    audio: null,
+    play(){
+      this.stop();
+      const settings = window.__widzewAudioSettings || {};
+      const audio = new Audio('./data/sound/crowd/4.mp3');
+      const effectsVolume = Number(settings.effectsVolume);
+      const baseVolume = Math.min(1, Math.max(0, (Number.isFinite(effectsVolume) ? effectsVolume : 0.7) * 0.30));
+      audio.volume = settings.effectsEnabled === false ? 0 : baseVolume;
+      this.audio = audio;
+      audio.play().catch(error => console.warn('Nie udało się uruchomić crowd/4.mp3:', error));
+      audio.addEventListener('ended', () => { this.audio = null; }, {once:true});
+    },
+    applyVolume(){
+      if(!this.audio) return;
+      const settings = window.__widzewAudioSettings || {};
+      const effectsVolume = Number(settings.effectsVolume);
+      const baseVolume = Math.min(1, Math.max(0, (Number.isFinite(effectsVolume) ? effectsVolume : 0.7) * 0.30));
+      this.audio.volume = settings.effectsEnabled === false ? 0 : baseVolume;
+    },
+    stop(){
+      if(this.audio){ this.audio.pause(); this.audio.currentTime=0; this.audio=null; }
+    }
+  };
+  window.__widzewCrowdActionAudio = crowdActionAudio;
+
   const crowdFinalAudio = {
     audio: null,
     play(){
@@ -224,7 +250,7 @@
   };
   window.__widzewCrowdFinalAudio = crowdFinalAudio;
 
-  function finishMatch(){stopClock();crowdAudio.stop();crowdIntroAudio.stop();crowdGoalAudio.stop();crowdFinalAudio.play();match.current=null;match.finished=true;setText('wsm-event','KONIEC CZASU GRY');setText('wsm-meta','');setText('wsm-status','Mecz zakończony.');feed('KONIEC CZASU GRY',90);renderScore();renderScorers();const back=document.getElementById('wsm-close');if(back){back.style.display='block';back.textContent='← WRÓĆ DO SEZONU'}if(window.seasonGameState){const round=Number(window.seasonGameState.currentRound),result={round,opponent:match.opponent.name,home:match.opponent.home,gf:match.score.widzew,ga:match.score.opponent,scorers:match.scorers.map(s=>({minute:s.minute,type:s.type||'widzew',name:s.player,player:s.playerRef||null}))};window.seasonGameState.widzewResults=Array.isArray(window.seasonGameState.widzewResults)?window.seasonGameState.widzewResults.filter(x=>Number(x.round)!==round):[];window.seasonGameState.widzewResults.push(result);
+  function finishMatch(){stopClock();crowdAudio.stop();crowdIntroAudio.stop();crowdActionAudio.stop();crowdGoalAudio.stop();crowdFinalAudio.play();match.current=null;match.finished=true;setText('wsm-event','KONIEC CZASU GRY');setText('wsm-meta','');setText('wsm-status','Mecz zakończony.');feed('KONIEC CZASU GRY',90);renderScore();renderScorers();const back=document.getElementById('wsm-close');if(back){back.style.display='block';back.textContent='← WRÓĆ DO SEZONU'}if(window.seasonGameState){const round=Number(window.seasonGameState.currentRound),result={round,opponent:match.opponent.name,home:match.opponent.home,gf:match.score.widzew,ga:match.score.opponent,scorers:match.scorers.map(s=>({minute:s.minute,type:s.type||'widzew',name:s.player,player:s.playerRef||null}))};window.seasonGameState.widzewResults=Array.isArray(window.seasonGameState.widzewResults)?window.seasonGameState.widzewResults.filter(x=>Number(x.round)!==round):[];window.seasonGameState.widzewResults.push(result);
         window.seasonGameState.playedMatchCount = Number(window.seasonGameState.playedMatchCount || 0) + 1;
         // Zapisz rozegrany mecz do stabilnej bazy natychmiast, zanim użytkownik przejdzie dalej.
         // Dzięki temu wynik/strzelcy z trybu „Zagraj mecz” nie mogą zostać zastąpieni symulacją.
@@ -232,7 +258,7 @@
         try{if(typeof window.renderPlayableSeason==='function')window.renderPlayableSeason()}catch(e){console.warn('Nie udało się odświeżyć wyników/tabeli:',e)}try{if(typeof window.renderLeagueTable==='function')window.renderLeagueTable(round,false)}catch(e){console.warn('Nie udało się odświeżyć tabeli:',e)}try{if(typeof window.renderTopScorers==='function')window.renderTopScorers()}catch(e){console.warn('Nie udało się odświeżyć klasyfikacji strzelców:',e)}}}
   function startCurrentEvent(){if(match.planIndex>=match.plan.length){if(match.half===1){runClockTo(match.firstHalfEnd||45,showHalftime)}else if(match.clockMinute<(match.secondHalfEnd||90)){runClockTo(match.secondHalfEnd||90,finishMatch)}else finishMatch();return}const planned=match.plan[match.planIndex];if(match.half===1&&planned.minute>45){runClockTo(match.firstHalfEnd||45,showHalftime);return}if(match.clockMinute<planned.minute){setText('wsm-event','');setText('wsm-meta','');document.getElementById('wsm-actions').innerHTML='';document.getElementById('wsm-player-choice').innerHTML='';runClockTo(planned.minute,()=>startCurrentEvent());return}match.current={...planned};match.minute=planned.minute;match.player=selectActor();match.receiver=null;match.lastActionPlayer=null;match.shotPlayer=null;match.k={eventGroup:null,repeatCount:0,k:0};match.selectedEvent3Player=null;match.selectedEvent4Player=null;match.selectedEvent7Player=null;renderScore();renderActions();feed('Początek sekwencji: '+eventText(match.current),match.minute);setText('wsm-status','Wybierz akcję.')}
   function advance(){match.planIndex++;startCurrentEvent()}
-  function playAction(id){if(!match.current||match.resolving||match.finished)return;match.resolving=true;try{const actor=chooseActorForAction(id);match.player=actor;match.lastActionPlayer=actor;const type=actionData(id).type;const receiver=(type==='pass'||type==='cross')?selectReceiver(actor):null;match.receiver=receiver||null;if(type==='shot')match.shotPlayer=actor;const p=window.WidzewSeasonMatchEngine.resolveAction(id,{z:match.current.z,performerStats:actor.stats,opponentStats:match.opponentStats,k:match.k.k,randomFn:Math.random});match.k=window.WidzewSeasonMatchEngine.updateKState(match.k,match.current.eventId);const t=window.WidzewSeasonMatchEngine.transitionForAction(id,p.success,match.current.z,Math.random),msg=t?.message?commName(t.message,match.lastActionPlayer):'';if(msg){feed(msg,match.minute);addGoal(String(t.message))}document.getElementById('wsm-debug').textContent=JSON.stringify({action:id,name:actionData(id).name,type,performer:actor.name,receiver:receiver?.name||null,shotPlayer:match.shotPlayer?.name||null,probability:p.probability,roll:p.roll,success:p.success,transition:t},null,2);const goalCode=t?.goal?(t.goal==='WIDZEW'?'9.10':'99.10'):(String(t?.message)==='9.10'||String(t?.message)==='99.10'?String(t.message):null);
+  function playAction(id){if(!match.current||match.resolving||match.finished)return;match.resolving=true;try{const actor=chooseActorForAction(id);match.player=actor;match.lastActionPlayer=actor;const type=actionData(id).type;const receiver=(type==='pass'||type==='cross')?selectReceiver(actor):null;match.receiver=receiver||null;if(type==='shot')match.shotPlayer=actor;const p=window.WidzewSeasonMatchEngine.resolveAction(id,{z:match.current.z,performerStats:actor.stats,opponentStats:match.opponentStats,k:match.k.k,randomFn:Math.random});match.k=window.WidzewSeasonMatchEngine.updateKState(match.k,match.current.eventId);const t=window.WidzewSeasonMatchEngine.transitionForAction(id,p.success,match.current.z,Math.random),msg=t?.message?commName(t.message,match.lastActionPlayer):'';if(msg){feed(msg,match.minute);if(['9.7','9.8','9.9','99.8','99.9'].includes(String(t.message)))crowdActionAudio.play();addGoal(String(t.message))}document.getElementById('wsm-debug').textContent=JSON.stringify({action:id,name:actionData(id).name,type,performer:actor.name,receiver:receiver?.name||null,shotPlayer:match.shotPlayer?.name||null,probability:p.probability,roll:p.roll,success:p.success,transition:t},null,2);const goalCode=t?.goal?(t.goal==='WIDZEW'?'9.10':'99.10'):(String(t?.message)==='9.10'||String(t?.message)==='99.10'?String(t.message):null);
       if(goalCode){
         if(!t?.message)addGoal(goalCode);
         const scorerName=goalCode==='9.10'?String((match.shotPlayer||match.player)?.name||'Zawodnik Widzewa').replace(/^(?:Zawodnik|Zawodnika)\s+/i,'').trim():'';
@@ -249,7 +275,7 @@
         return;
       }
       if(t?.end){endSequence();return}const nx=nextEventFrom(t);if(!nx){endSequence();return}if(nx.eventId===10||nx.eventId===110){match.current=nx;match.player=actor;if(nx.eventId===10)match.shotPlayer=actor;feed('Event '+nx.eventId+': '+eventText(nx),match.minute);renderActions();playSpecial(nx);return}match.current=nx;match.player=(type==='pass'||type==='cross')?(p.success?(receiver||selectActor()):actor):actor;if(t.keepPlayer)match.player=actor;feed('Event '+nx.eventId+': '+eventText(nx),match.minute);renderActions()}catch(err){console.error('Błąd rozstrzygania akcji:',err);setText('wsm-status',`Błąd akcji: ${err.message||err}`)}finally{match.resolving=false}}
-  function playSpecial(ev){if(match.finished)return;const actor=(Number(ev.eventId)===10?match.shotPlayer:null)||match.player||selectActor();if(Number(ev.eventId)===10)match.shotPlayer=actor;match.player=actor;match.lastActionPlayer=actor;const id=String(ev.eventId);const p=window.WidzewSeasonMatchEngine.resolveAction(id,{z:ev.z,performerStats:actor.stats,opponentStats:match.opponentStats,k:match.k.k,randomFn:Math.random}),t=window.WidzewSeasonMatchEngine.transitionForAction(id,p.success,ev.z,Math.random),msg=t?.message?commName(t.message,match.lastActionPlayer):'';if(msg){feed(msg,match.minute);addGoal(String(t.message))}document.getElementById('wsm-debug').textContent=JSON.stringify({action:id,name:actionData(id).name,performer:actor.name,shotPlayer:match.shotPlayer?.name||null,probability:p.probability,roll:p.roll,success:p.success,transition:t},null,2);const goalCode=t?.goal?(t.goal==='WIDZEW'?'9.10':'99.10'):(String(t?.message)==='9.10'||String(t?.message)==='99.10'?String(t.message):null);
+  function playSpecial(ev){if(match.finished)return;const actor=(Number(ev.eventId)===10?match.shotPlayer:null)||match.player||selectActor();if(Number(ev.eventId)===10)match.shotPlayer=actor;match.player=actor;match.lastActionPlayer=actor;const id=String(ev.eventId);const p=window.WidzewSeasonMatchEngine.resolveAction(id,{z:ev.z,performerStats:actor.stats,opponentStats:match.opponentStats,k:match.k.k,randomFn:Math.random}),t=window.WidzewSeasonMatchEngine.transitionForAction(id,p.success,ev.z,Math.random),msg=t?.message?commName(t.message,match.lastActionPlayer):'';if(msg){feed(msg,match.minute);if(['9.7','9.8','9.9','99.8','99.9'].includes(String(t.message)))crowdActionAudio.play();addGoal(String(t.message))}document.getElementById('wsm-debug').textContent=JSON.stringify({action:id,name:actionData(id).name,performer:actor.name,shotPlayer:match.shotPlayer?.name||null,probability:p.probability,roll:p.roll,success:p.success,transition:t},null,2);const goalCode=t?.goal?(t.goal==='WIDZEW'?'9.10':'99.10'):(String(t?.message)==='9.10'||String(t?.message)==='99.10'?String(t.message):null);
       if(goalCode){
         if(!t?.message)addGoal(goalCode);
         const scorerName=goalCode==='9.10'?String((match.shotPlayer||match.player)?.name||'Zawodnik Widzewa').replace(/^(?:Zawodnik|Zawodnika)\s+/i,'').trim():'';
