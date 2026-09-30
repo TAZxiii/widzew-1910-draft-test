@@ -24,11 +24,11 @@
     start(){
       this.stop();
       const settings = window.__widzewAudioSettings || {};
-      if(settings.effectsEnabled === false) return;
       const audio = new Audio('./data/sound/crowd/7.mp3');
       audio.loop = true;
       const effectsVolume = Number(settings.effectsVolume);
-      audio.volume = Math.min(1, Math.max(0, (Number.isFinite(effectsVolume) ? effectsVolume : 0.7) * 0.30));
+      const baseVolume = Math.min(1, Math.max(0, (Number.isFinite(effectsVolume) ? effectsVolume : 0.7) * 0.30));
+      audio.volume = settings.effectsEnabled === false ? 0 : baseVolume;
       audio.play().catch(error => console.warn('Nie udało się uruchomić dopingu:', error));
       this.audio = audio;
     },
