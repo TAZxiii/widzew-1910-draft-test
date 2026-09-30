@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (this.excluded || this.started) return;
             this.started = true;
 
-            const candidates = [...this.candidates];
+            const candidates = this.specialUnlocked ? [this.specialTrack] : [...this.candidates];
             while (candidates.length) {
                 const index = Math.floor(Math.random() * candidates.length);
                 const path = candidates.splice(index, 1)[0];
