@@ -45,6 +45,69 @@ function parseCSV(text) {
 
 document.addEventListener("DOMContentLoaded", () => {
 
+    // MUZYKA MENU
+    // Startuje po pierwszej reakcji użytkownika na stronę.
+    // Działa we wszystkich trybach poza interaktywnym „Rozegraj mecz”.
+    const gameMusic = {
+        excluded: false,
+        started: false,
+        audio: null,
+        candidates: Array.from({ length: 20 }, (_, i) => `data/sound/menu/${i + 1}.mp3`),
+
+        async start() {
+            if (this.excluded || this.started) return;
+            this.started = true;
+
+            const candidates = [...this.candidates];
+            while (candidates.length) {
+                const index = Math.floor(Math.random() * candidates.length);
+                const path = candidates.splice(index, 1)[0];
+                const audio = new Audio(path);
+                audio.loop = true;
+                audio.volume = 0.35;
+
+                try {
+                    await audio.play();
+                    this.audio = audio;
+                    return;
+                } catch (error) {
+                    audio.pause();
+                }
+            }
+
+            this.started = false;
+        },
+
+        stop() {
+            if (this.audio) {
+                this.audio.pause();
+                this.audio.currentTime = 0;
+                this.audio = null;
+            }
+            this.started = false;
+        },
+
+        setExcluded(value) {
+            this.excluded = Boolean(value);
+            if (this.excluded) this.stop();
+            else if (this.started === false) this.start();
+        }
+    };
+
+    window.__widzewGameMusic = gameMusic;
+    window.setGameMusicExcluded = value => gameMusic.setExcluded(value);
+
+    const startMusicAfterFirstInteraction = () => {
+        if (!gameMusic.excluded) gameMusic.start();
+        document.removeEventListener("pointerdown", startMusicAfterFirstInteraction, true);
+        document.removeEventListener("keydown", startMusicAfterFirstInteraction, true);
+        document.removeEventListener("touchstart", startMusicAfterFirstInteraction, true);
+    };
+    document.addEventListener("pointerdown", startMusicAfterFirstInteraction, true);
+    document.addEventListener("keydown", startMusicAfterFirstInteraction, true);
+    document.addEventListener("touchstart", startMusicAfterFirstInteraction, true);
+
+
 
 function positionColorClass(position, role) {
     const r = String(role || "");
