@@ -80,6 +80,13 @@
         // natomiast faul 99.11 występuje często.
         // Kluczowe: 99.11 NIE losuje nowej odległości.
         // Do eventu 107 lub 104 przekazujemy dokładnie Z z poprzedniej akcji.
+        // 101.1 / 102.1: udana akcja powinna delikatnie przesunąć Z w stronę bramki.
+        // Nie zostawiamy tutaj starego Z — zmniejszamy je losowo o 1–5 m.
+        if(success && (id==='101.1' || id==='102.1')){
+            const nz=Math.max(1,Number(z)-int(1,5,r));
+            t={...t,newZ:nz};
+        }
+
         if(success && (id==='101.5' || id==='102.5')){
             const roll=rand(r);
             if(roll < 60/70){
