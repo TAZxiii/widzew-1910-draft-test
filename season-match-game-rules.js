@@ -16,7 +16,12 @@
       const nextNormal=Number(z)<=16?108:eventId;
       if(success){
         const x=clamp(r())*140;
-        if(x<80)return {message:'99.7',nextEvent:nextNormal,testOverride:true};
+        if(x<80)return {
+          message:'99.7',
+          nextEvent:nextNormal,
+          newZ:original?.newZ,
+          testOverride:true
+        };
         if(x<110)return {message:'99.3',end:true,testOverride:true};
         return {message:'99.4',end:true,testOverride:true};
       }
@@ -24,10 +29,15 @@
       if(clamp(r())<shotChance){
         const shotMessage=clamp(r())<0.45?'99.1':'99.2';
         return shotMessage==='99.1'
-          ? {message:'99.1',nextEvent:110,testOverride:true}
-          : {message:'99.2',end:true,testOverride:true};
+          ? {message:'99.1',nextEvent:110,newZ:Number(z),testOverride:true}
+          : {message:'99.2',end:true,newZ:Number(z),testOverride:true};
       }
-      return {message:'99.6',nextEvent:nextNormal,testOverride:true};
+      return {
+        message:'99.6',
+        nextEvent:nextNormal,
+        newZ:original?.newZ,
+        testOverride:true
+      };
     }
 
     if(sid==='108.1'||sid==='108.2'||sid==='108.3'){
