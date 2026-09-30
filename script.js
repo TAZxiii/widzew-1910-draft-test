@@ -310,6 +310,7 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem("widzewEffectsEnabled", String(audioSettings.effectsEnabled));
         if (window.__widzewCrowdAudio) window.__widzewCrowdAudio.setEnabled();
         if (window.__widzewCrowdIntroAudio) window.__widzewCrowdIntroAudio.applyVolume();
+        if (window.__widzewCrowdGoalAudio) window.__widzewCrowdGoalAudio.applyVolume();
         if (window.__widzewCrowdFinalAudio) window.__widzewCrowdFinalAudio.applyVolume();
         refreshAudioSettingsUI();
     });
