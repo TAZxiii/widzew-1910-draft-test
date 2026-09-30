@@ -306,6 +306,8 @@ document.addEventListener("DOMContentLoaded", () => {
             margin-top: 10px;
             accent-color: #e30613;
             cursor: pointer;
+            touch-action: pan-x;
+            -webkit-tap-highlight-color: transparent;
         }
         .game-setting-toggle {
             width: 46px;
