@@ -308,6 +308,7 @@ document.addEventListener("DOMContentLoaded", () => {
         event.stopPropagation();
         audioSettings.effectsEnabled = !audioSettings.effectsEnabled;
         localStorage.setItem("widzewEffectsEnabled", String(audioSettings.effectsEnabled));
+        if (window.__widzewCrowdAudio) window.__widzewCrowdAudio.setEnabled();
         refreshAudioSettingsUI();
     });
 
@@ -322,6 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const value = Number(event.target.value) / 100;
         audioSettings.effectsVolume = value;
         localStorage.setItem("widzewEffectsVolume", String(value));
+        if (window.__widzewCrowdAudio) window.__widzewCrowdAudio.setVolume();
         refreshAudioSettingsUI();
     });
 
