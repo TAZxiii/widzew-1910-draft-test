@@ -401,20 +401,15 @@ document.addEventListener("DOMContentLoaded", () => {
         effectsVolumeValue.textContent = effectsVolume.value + "%";
     };
 
-    musicToggle.addEventListener("click", event => {
-        event.stopPropagation();
+    const toggleMusic = () => {
         audioSettings.musicEnabled = !audioSettings.musicEnabled;
         localStorage.setItem("widzewMusicEnabled", String(audioSettings.musicEnabled));
-        if (audioSettings.musicEnabled) {
-            gameMusic.start();
-        } else {
-            gameMusic.stop();
-        }
+        if (audioSettings.musicEnabled) gameMusic.start();
+        else gameMusic.stop();
         refreshAudioSettingsUI();
-    });
+    };
 
-    effectsToggle.addEventListener("click", event => {
-        event.stopPropagation();
+    const toggleEffects = () => {
         audioSettings.effectsEnabled = !audioSettings.effectsEnabled;
         localStorage.setItem("widzewEffectsEnabled", String(audioSettings.effectsEnabled));
         if (window.__widzewCrowdAudio) window.__widzewCrowdAudio.setEnabled();
@@ -422,8 +417,48 @@ document.addEventListener("DOMContentLoaded", () => {
         if (window.__widzewCrowdGoalAudio) window.__widzewCrowdGoalAudio.applyVolume();
         if (window.__widzewCrowdGoalFollowAudio) window.__widzewCrowdGoalFollowAudio.applyVolume();
         if (window.__widzewCrowdFinalAudio) window.__widzewCrowdFinalAudio.applyVolume();
+        if (window.__widzewCrowdActionAudio) window.__widzewCrowdActionAudio.applyVolume();
         refreshAudioSettingsUI();
+    };
+
+    // Na telefonach część przeglądarek potrafi pominąć/zmienić obsługę
+    // zwykłego clicka przy panelu ustawień. Obsługujemy więc także touchend
+    // i blokujemy następujący po nim syntetyczny click, aby nie przełączyć
+    // ustawienia dwa razy.
+    let suppressMusicClick = false;
+    let suppressEffectsClick = false;
+
+    musicToggle.addEventListener("click", event => {
+        event.stopPropagation();
+        if (suppressMusicClick) {
+            suppressMusicClick = false;
+            return;
+        }
+        toggleMusic();
     });
+
+    effectsToggle.addEventListener("click", event => {
+        event.stopPropagation();
+        if (suppressEffectsClick) {
+            suppressEffectsClick = false;
+            return;
+        }
+        toggleEffects();
+    });
+
+    musicToggle.addEventListener("touchend", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        suppressMusicClick = true;
+        toggleMusic();
+    }, {passive:false});
+
+    effectsToggle.addEventListener("touchend", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        suppressEffectsClick = true;
+        toggleEffects();
+    }, {passive:false});
 
     const applyMusicVolumeFromSlider = event => {
         const value = Math.min(1, Math.max(0, Number(event.target.value) / 100));
