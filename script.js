@@ -46,6 +46,8 @@ function parseCSV(text) {
 document.addEventListener("DOMContentLoaded", () => {
 
     // MUZYKA MENU
+    // Natywna redukcja głośności muzyki menu — suwak użytkownika działa dodatkowo.
+    const MENU_MUSIC_NATIVE_VOLUME = 0.35;
     // Startuje po pierwszej reakcji użytkownika na stronę.
     // Działa we wszystkich trybach poza interaktywnym „Rozegraj mecz”.
     const gameMusic = {
@@ -104,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
     gameMusic.setVolume = value => {
         this;
         const volume = Math.min(1, Math.max(0, Number(value) || 0));
-        gameMusic.volume = volume;
+        gameMusic.volume = volume * MENU_MUSIC_NATIVE_VOLUME;
         if (gameMusic.audio) gameMusic.audio.volume = volume;
         localStorage.setItem("widzewMusicVolume", String(volume));
     };
@@ -119,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const originalSetExcluded = gameMusic.setExcluded.bind(gameMusic);
     gameMusic.setExcluded = value => originalSetExcluded(value);
 
-    gameMusic.volume = audioSettings.musicVolume;
+    gameMusic.volume = audioSettings.musicVolume * MENU_MUSIC_NATIVE_VOLUME;
 
     window.__widzewAudioSettings = audioSettings;
     window.__widzewGameMusic = gameMusic;
