@@ -127,7 +127,15 @@
 
     function applyTransitionZ(id,t,z,r){
         if(!t || !Number.isFinite(Number(z))) return t;
-        const nz=targetZForTransition(id,t,z,r);
+        let nz=targetZForTransition(id,t,z,r);
+
+        // Event 1 ma akcję 1.4 dostępną od Z=4 m.
+        // Nie pozwalamy więc, aby przejście do Eventu 1
+        // wygenerowało Z=1–3 i zablokowało dalszą akcję.
+        if(Number(t.nextEvent)===1 && Number.isFinite(Number(nz))){
+            nz=Math.max(4,Number(nz));
+        }
+
         if(nz!==undefined && nz!==null) t.newZ=nz;
         return t;
     }
