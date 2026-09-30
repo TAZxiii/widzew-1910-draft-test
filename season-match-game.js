@@ -73,6 +73,7 @@
 
   const crowdAudio = {
     audio: null,
+    track: null,
     baseVolume(){
       const settings = window.__widzewAudioSettings || {};
       const effectsVolume = Number(settings.effectsVolume);
@@ -84,12 +85,28 @@
       this.audio.volume = settings.effectsEnabled === false ? 0 : this.baseVolume();
     },
     start(){
+      this.setTrack('7');
+    },
+    setTrack(file){
+      const nextTrack = String(file);
+      if(this.audio && this.track === nextTrack){
+        this.applyVolume();
+        return;
+      }
       this.stop();
-      const audio = new Audio('./data/sound/crowd/7.mp3');
+      const settings = window.__widzewAudioSettings || {};
+      const audio = new Audio('./data/sound/crowd/'+nextTrack+'.mp3');
       audio.loop = true;
       this.audio = audio;
+      this.track = nextTrack;
       this.applyVolume();
-      audio.play().catch(error => console.warn('Nie udało się uruchomić dopingu:', error));
+      audio.play().catch(error => console.warn('Nie udało się uruchomić crowd/'+nextTrack+'.mp3:', error));
+    },
+    updateForScore(){
+      if(!match) return;
+      const widzewGoals = Number(match.score?.widzew || 0);
+      const opponentGoals = Number(match.score?.opponent || 0);
+      this.setTrack(widzewGoals - opponentGoals >= 2 ? '3' : '7');
     },
     setEnabled(){
       this.applyVolume();
@@ -103,6 +120,7 @@
         this.audio.currentTime = 0;
         this.audio = null;
       }
+      this.track = null;
     }
   };
   window.__widzewCrowdAudio = crowdAudio;
@@ -137,7 +155,7 @@
   function showEventPlayerChoice(eventId){const box=document.getElementById('wsm-player-choice');if(!box)return;const key=`selectedEvent${eventId}Player`;const selected=match[key];box.innerHTML='<div class="wsm-meta">Wybierz zawodnika wykonującego akcję:</div><div class="wsm-player-choice">'+match.xi.filter(p=>!p.isGoalkeeper).map((p,i)=>`<button class="wsm-player-btn ${selected===p?'selected':''}" data-i="${i}">${esc(p.name)}</button>`).join('')+'</div>';box.querySelectorAll('button').forEach(b=>b.onclick=()=>{match[key]=match.xi.filter(p=>!p.isGoalkeeper)[Number(b.dataset.i)];match.player=match[key];renderActions()})}
   function renderActions(){const ev=match.current;if(!ev)return;setText('wsm-event',eventText(ev));setText('wsm-meta',`Event ${ev.eventId} · ${ev.side} · Z = ${ev.z==null?'—':ev.z} · ${ev.minute}'`);const box=document.getElementById('wsm-actions');box.innerHTML='';let ids=window.WidzewSeasonMatchEngine.availableActions(ev.eventId,ev.z)||[];if(!ids.length&&Number(ev.eventId)===108){const all=window.WidzewSeasonMatchEngine.constants?.ACTION_SPECS||{};ids=Object.keys(all).filter(id=>id.startsWith('108.'));}if(!ids.length&&[101,102].includes(Number(ev.eventId))&&Number(ev.z)<5){match.current={...ev,eventId:108};renderActions();return}if(Number(ev.eventId)===104&&!ids.length)ids=['104.1','104.2'];if(!match.player)match.player=selectActor();const actor=match.player;ids.forEach(id=>{const p=window.WidzewSeasonMatchEngine.calculateActionProbability(id,{z:ev.z,performerStats:actor.stats,opponentStats:match.opponentStats,k:match.k.k}),b=document.createElement('button');b.className='wsm-action';b.innerHTML=`<div class="wsm-action-name">${esc(actionData(id).name||id)}</div><div class="wsm-chance">Szansa powodzenia: <b>${p.probability.toFixed(1)}%</b></div>`;b.onclick=()=>playAction(id);box.appendChild(b)});if([3,4,7].includes(Number(ev.eventId)))showEventPlayerChoice(Number(ev.eventId));else document.getElementById('wsm-player-choice').innerHTML=''}
   function nextEventFrom(t){if(!t)return null;let id=t.nextEvent;if(id==null&&t.nextAction!=null)id=Number(t.nextAction);if(id==null)return null;const rawZ=t.newZ!==undefined?t.newZ:eventZ(id);const z=rawZ==null?null:(Number(id)===108?Math.max(1,Number(rawZ)):Number(rawZ));return{eventId:Number(id),side:Number(id)>=100?'DEF':'OF',z:z,minute:match.plan[match.planIndex]?.minute??match.minute}}
-  function addGoal(msg){if(msg==='9.10'){ crowdIntroAudio.stop(); crowdGoalAudio.play();const scorer=match.shotPlayer||match.player;const cleanName=String(scorer?.name||'Zawodnik Widzewa').replace(/^(?:Zawodnik|Zawodnika)\s+/i,'').trim();match.score.widzew++;match.scorers.push({name:cleanName,player:cleanName,minute:match.minute,type:'widzew',playerRef:scorer||null})}if(msg==='99.10')match.score.opponent++;renderScore();renderScorers()}
+  function addGoal(msg){if(msg==='9.10'){ crowdIntroAudio.stop(); crowdGoalAudio.play();const scorer=match.shotPlayer||match.player;const cleanName=String(scorer?.name||'Zawodnik Widzewa').replace(/^(?:Zawodnik|Zawodnika)\s+/i,'').trim();match.score.widzew++;match.scorers.push({name:cleanName,player:cleanName,minute:match.minute,type:'widzew',playerRef:scorer||null})}if(msg==='99.10')match.score.opponent++;renderScore();renderScorers();crowdAudio.updateForScore()}
   function showHalftime(){stopClock();setText('wsm-event','KONIEC I POŁOWY');setText('wsm-meta','');document.getElementById('wsm-actions').innerHTML='';document.getElementById('wsm-player-choice').innerHTML='';setText('wsm-status','Przerwa. Kliknij, aby rozpocząć drugą połowę.');const box=document.getElementById('wsm-status');const b=document.createElement('button');b.className='wsm-primary';b.textContent='▶ DRUGA POŁOWA';b.onclick=()=>{b.remove();finishHalf()};box.appendChild(b);const wrap=document.querySelector('#wsm-overlay .wsm-wrap');const layout=wrap?.querySelector('.wsm-layout');if(window.matchMedia('(max-width:700px)').matches&&wrap&&layout){b.classList.add('wsm-halftime-mobile');wrap.insertBefore(b,layout);b.style.display='block';b.style.width='100%';b.style.margin='0 0 10px 0';b.style.textAlign='center';b.style.position='sticky';b.style.top='0';b.style.zIndex='100000'}}
   function endSequence(){match.current=null;match.player=null;match.shotPlayer=null;match.lastActionPlayer=null;match.k={eventGroup:null,repeatCount:0,k:0};const next=match.plan[match.planIndex+1];if(match.half===1&&(!next||next.minute>45)){runClockTo(match.firstHalfEnd||45,showHalftime);return}if(match.half===2&&!next){runClockTo(match.secondHalfEnd||90,finishMatch);return}advance()}
   function finishHalf(){stopClock();match.half=2;match.clockMinute=45;match.minute=45;match.planIndex=match.plan.findIndex(x=>x.minute>45);renderScore();if(match.planIndex<0)runClockTo(match.secondHalfEnd||90,finishMatch);else startCurrentEvent()}
