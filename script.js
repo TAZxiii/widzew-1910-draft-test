@@ -425,22 +425,33 @@ document.addEventListener("DOMContentLoaded", () => {
         refreshAudioSettingsUI();
     });
 
-    musicVolume.addEventListener("input", event => {
-        const value = Number(event.target.value) / 100;
+    const applyMusicVolumeFromSlider = event => {
+        const value = Math.min(1, Math.max(0, Number(event.target.value) / 100));
         audioSettings.musicVolume = value;
         gameMusic.setVolume(value);
         refreshAudioSettingsUI();
-    });
+    };
 
-    effectsVolume.addEventListener("input", event => {
-        const value = Number(event.target.value) / 100;
+    const applyEffectsVolumeFromSlider = event => {
+        const value = Math.min(1, Math.max(0, Number(event.target.value) / 100));
         audioSettings.effectsVolume = value;
         localStorage.setItem("widzewEffectsVolume", String(value));
         if (window.__widzewCrowdAudio) window.__widzewCrowdAudio.setVolume();
         if (window.__widzewCrowdIntroAudio) window.__widzewCrowdIntroAudio.applyVolume();
+        if (window.__widzewCrowdGoalAudio) window.__widzewCrowdGoalAudio.applyVolume();
+        if (window.__widzewCrowdGoalFollowAudio) window.__widzewCrowdGoalFollowAudio.applyVolume();
         if (window.__widzewCrowdFinalAudio) window.__widzewCrowdFinalAudio.applyVolume();
+        if (window.__widzewCrowdActionAudio) window.__widzewCrowdActionAudio.applyVolume();
         refreshAudioSettingsUI();
-    });
+    };
+
+    // input działa płynnie na komputerze i większości telefonów, a change
+    // zapewnia zastosowanie wartości także w przeglądarkach mobilnych,
+    // które aktualizują suwak dopiero po puszczeniu palca.
+    musicVolume.addEventListener("input", applyMusicVolumeFromSlider);
+    musicVolume.addEventListener("change", applyMusicVolumeFromSlider);
+    effectsVolume.addEventListener("input", applyEffectsVolumeFromSlider);
+    effectsVolume.addEventListener("change", applyEffectsVolumeFromSlider);
 
     const settingsButton = document.getElementById("gameSettingsButton");
     settingsButton.addEventListener("click", event => {
