@@ -118,7 +118,33 @@
   function showHalftime(){stopClock();setText('wsm-event','KONIEC I POŁOWY');setText('wsm-meta','');document.getElementById('wsm-actions').innerHTML='';document.getElementById('wsm-player-choice').innerHTML='';setText('wsm-status','Przerwa. Kliknij, aby rozpocząć drugą połowę.');const box=document.getElementById('wsm-status');const b=document.createElement('button');b.className='wsm-primary';b.textContent='▶ DRUGA POŁOWA';b.onclick=()=>{b.remove();finishHalf()};box.appendChild(b);const wrap=document.querySelector('#wsm-overlay .wsm-wrap');const layout=wrap?.querySelector('.wsm-layout');if(window.matchMedia('(max-width:700px)').matches&&wrap&&layout){b.classList.add('wsm-halftime-mobile');wrap.insertBefore(b,layout);b.style.display='block';b.style.width='100%';b.style.margin='0 0 10px 0';b.style.textAlign='center';b.style.position='sticky';b.style.top='0';b.style.zIndex='100000'}}
   function endSequence(){match.current=null;match.player=null;match.shotPlayer=null;match.lastActionPlayer=null;match.k={eventGroup:null,repeatCount:0,k:0};const next=match.plan[match.planIndex+1];if(match.half===1&&(!next||next.minute>45)){runClockTo(match.firstHalfEnd||45,showHalftime);return}if(match.half===2&&!next){runClockTo(match.secondHalfEnd||90,finishMatch);return}advance()}
   function finishHalf(){stopClock();match.half=2;match.clockMinute=45;match.minute=45;match.planIndex=match.plan.findIndex(x=>x.minute>45);renderScore();if(match.planIndex<0)runClockTo(match.secondHalfEnd||90,finishMatch);else startCurrentEvent()}
-  function finishMatch(){stopClock();crowdAudio.stop();crowdIntroAudio.stop();match.current=null;match.finished=true;setText('wsm-event','KONIEC CZASU GRY');setText('wsm-meta','');setText('wsm-status','Mecz zakończony.');feed('KONIEC CZASU GRY',90);renderScore();renderScorers();const back=document.getElementById('wsm-close');if(back){back.style.display='block';back.textContent='← WRÓĆ DO SEZONU'}if(window.seasonGameState){const round=Number(window.seasonGameState.currentRound),result={round,opponent:match.opponent.name,home:match.opponent.home,gf:match.score.widzew,ga:match.score.opponent,scorers:match.scorers.map(s=>({minute:s.minute,type:s.type||'widzew',name:s.player,player:s.playerRef||null}))};window.seasonGameState.widzewResults=Array.isArray(window.seasonGameState.widzewResults)?window.seasonGameState.widzewResults.filter(x=>Number(x.round)!==round):[];window.seasonGameState.widzewResults.push(result);
+  const crowdFinalAudio = {
+    audio: null,
+    play(){
+      this.stop();
+      const settings = window.__widzewAudioSettings || {};
+      const audio = new Audio('./data/sound/crowd/9.mp3');
+      const effectsVolume = Number(settings.effectsVolume);
+      const baseVolume = Math.min(1, Math.max(0, (Number.isFinite(effectsVolume) ? effectsVolume : 0.7) * 0.30));
+      audio.volume = settings.effectsEnabled === false ? 0 : baseVolume;
+      this.audio = audio;
+      audio.play().catch(error => console.warn('Nie udało się uruchomić crowd/9.mp3:', error));
+      audio.addEventListener('ended', () => { this.audio = null; }, {once:true});
+    },
+    applyVolume(){
+      if(!this.audio) return;
+      const settings = window.__widzewAudioSettings || {};
+      const effectsVolume = Number(settings.effectsVolume);
+      const baseVolume = Math.min(1, Math.max(0, (Number.isFinite(effectsVolume) ? effectsVolume : 0.7) * 0.30));
+      this.audio.volume = settings.effectsEnabled === false ? 0 : baseVolume;
+    },
+    stop(){
+      if(this.audio){ this.audio.pause(); this.audio.currentTime=0; this.audio=null; }
+    }
+  };
+  window.__widzewCrowdFinalAudio = crowdFinalAudio;
+
+  function finishMatch(){stopClock();crowdAudio.stop();crowdIntroAudio.stop();crowdFinalAudio.play();match.current=null;match.finished=true;setText('wsm-event','KONIEC CZASU GRY');setText('wsm-meta','');setText('wsm-status','Mecz zakończony.');feed('KONIEC CZASU GRY',90);renderScore();renderScorers();const back=document.getElementById('wsm-close');if(back){back.style.display='block';back.textContent='← WRÓĆ DO SEZONU'}if(window.seasonGameState){const round=Number(window.seasonGameState.currentRound),result={round,opponent:match.opponent.name,home:match.opponent.home,gf:match.score.widzew,ga:match.score.opponent,scorers:match.scorers.map(s=>({minute:s.minute,type:s.type||'widzew',name:s.player,player:s.playerRef||null}))};window.seasonGameState.widzewResults=Array.isArray(window.seasonGameState.widzewResults)?window.seasonGameState.widzewResults.filter(x=>Number(x.round)!==round):[];window.seasonGameState.widzewResults.push(result);
         window.seasonGameState.playedMatchCount = Number(window.seasonGameState.playedMatchCount || 0) + 1;
         // Zapisz rozegrany mecz do stabilnej bazy natychmiast, zanim użytkownik przejdzie dalej.
         // Dzięki temu wynik/strzelcy z trybu „Zagraj mecz” nie mogą zostać zastąpieni symulacją.
