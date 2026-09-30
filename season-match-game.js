@@ -21,16 +21,29 @@
   function runClockTo(target,onReached){if(!match)return;const goal=Math.max(0,Math.min(90,Number(target)||0));stopClock();if(match.clockMinute>=goal){match.minute=goal;renderScore();onReached();return}match.clockRunning=true;setText('wsm-status',`Czas gry: ${match.clockMinute}' — trwa odliczanie do ${goal}'...`);clockTimer=setInterval(()=>{if(!match||match.finished){stopClock();return}match.clockMinute=Math.min(goal,match.clockMinute+1);match.minute=match.clockMinute;renderScore();if(match.clockMinute>=goal){stopClock();onReached()}},100)}
   const crowdAudio = {
     audio: null,
+    baseVolume(){
+      const settings = window.__widzewAudioSettings || {};
+      const effectsVolume = Number(settings.effectsVolume);
+      return Math.min(1, Math.max(0, (Number.isFinite(effectsVolume) ? effectsVolume : 0.7) * 0.30));
+    },
+    applyVolume(){
+      if(!this.audio) return;
+      const settings = window.__widzewAudioSettings || {};
+      this.audio.volume = settings.effectsEnabled === false ? 0 : this.baseVolume();
+    },
     start(){
       this.stop();
-      const settings = window.__widzewAudioSettings || {};
       const audio = new Audio('./data/sound/crowd/7.mp3');
       audio.loop = true;
-      const effectsVolume = Number(settings.effectsVolume);
-      const baseVolume = Math.min(1, Math.max(0, (Number.isFinite(effectsVolume) ? effectsVolume : 0.7) * 0.30));
-      audio.volume = settings.effectsEnabled === false ? 0 : baseVolume;
-      audio.play().catch(error => console.warn('Nie udało się uruchomić dopingu:', error));
       this.audio = audio;
+      this.applyVolume();
+      audio.play().catch(error => console.warn('Nie udało się uruchomić dopingu:', error));
+    },
+    setEnabled(){
+      this.applyVolume();
+    },
+    setVolume(){
+      this.applyVolume();
     },
     stop(){
       if(this.audio){
@@ -40,6 +53,7 @@
       }
     }
   };
+  window.__widzewCrowdAudio = crowdAudio;
 
   function close(){if(!match?.finished)return;stopClock();crowdAudio.stop();document.getElementById('wsm-overlay')?.remove();started=false;match=null;ui=null;if(window.setGameMusicExcluded)window.setGameMusicExcluded(false)}
   const esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
