@@ -94,8 +94,246 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    const audioSettings = {
+        musicEnabled: localStorage.getItem("widzewMusicEnabled") !== "false",
+        musicVolume: Math.min(1, Math.max(0, Number(localStorage.getItem("widzewMusicVolume") ?? "0.35"))),
+        effectsEnabled: localStorage.getItem("widzewEffectsEnabled") !== "false",
+        effectsVolume: Math.min(1, Math.max(0, Number(localStorage.getItem("widzewEffectsVolume") ?? "0.7")))
+    };
+
+    gameMusic.setVolume = value => {
+        this;
+        const volume = Math.min(1, Math.max(0, Number(value) || 0));
+        gameMusic.volume = volume;
+        if (gameMusic.audio) gameMusic.audio.volume = volume;
+        localStorage.setItem("widzewMusicVolume", String(volume));
+    };
+
+    const originalStart = gameMusic.start.bind(gameMusic);
+    gameMusic.start = async () => {
+        if (!audioSettings.musicEnabled) return;
+        gameMusic.setVolume(audioSettings.musicVolume);
+        return originalStart();
+    };
+
+    const originalSetExcluded = gameMusic.setExcluded.bind(gameMusic);
+    gameMusic.setExcluded = value => originalSetExcluded(value);
+
+    gameMusic.volume = audioSettings.musicVolume;
+
+    window.__widzewAudioSettings = audioSettings;
     window.__widzewGameMusic = gameMusic;
     window.setGameMusicExcluded = value => gameMusic.setExcluded(value);
+
+    // PANEL OPCJI DŹWIĘKU
+    const settingsStyle = document.createElement("style");
+    settingsStyle.textContent = `
+        #gameSettings {
+            position: fixed;
+            top: 18px;
+            left: 18px;
+            z-index: 100001;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        #gameSettingsButton {
+            width: 42px;
+            height: 42px;
+            border: 1px solid #444;
+            border-radius: 50%;
+            background: rgba(15,15,15,.94);
+            color: #fff;
+            font-size: 21px;
+            cursor: pointer;
+            box-shadow: 0 5px 18px rgba(0,0,0,.35);
+            display: grid;
+            place-items: center;
+            transition: transform .15s ease, border-color .15s ease;
+        }
+        #gameSettings:hover #gameSettingsButton,
+        #gameSettings.open #gameSettingsButton {
+            transform: rotate(35deg);
+            border-color: #e30613;
+        }
+        #gameSettingsPanel {
+            position: absolute;
+            top: 50px;
+            left: 0;
+            width: 310px;
+            padding: 20px;
+            border: 1px solid #3d3d3d;
+            border-radius: 14px;
+            background: rgba(18,18,18,.98);
+            box-shadow: 0 18px 50px rgba(0,0,0,.6);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-6px);
+            transition: opacity .15s ease, transform .15s ease, visibility .15s;
+        }
+        #gameSettings:hover #gameSettingsPanel,
+        #gameSettings.open #gameSettingsPanel {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        #gameSettingsPanel h2 {
+            margin: 0 0 18px;
+            font-size: 21px;
+            color: #fff;
+        }
+        .game-setting-row {
+            padding: 13px 0;
+            border-top: 1px solid #292929;
+        }
+        .game-setting-row:first-of-type { border-top: 0; }
+        .game-setting-label {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: center;
+            color: #eee;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .game-setting-range {
+            width: 100%;
+            margin-top: 10px;
+            accent-color: #e30613;
+            cursor: pointer;
+        }
+        .game-setting-toggle {
+            width: 46px;
+            height: 24px;
+            border: 0;
+            border-radius: 20px;
+            background: #555;
+            position: relative;
+            cursor: pointer;
+            flex: 0 0 auto;
+        }
+        .game-setting-toggle::after {
+            content: "";
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            top: 3px;
+            left: 3px;
+            border-radius: 50%;
+            background: #fff;
+            transition: transform .15s ease;
+        }
+        .game-setting-toggle.active {
+            background: #e30613;
+        }
+        .game-setting-toggle.active::after {
+            transform: translateX(22px);
+        }
+        .game-setting-value {
+            color: #999;
+            font-size: 12px;
+            min-width: 42px;
+            text-align: right;
+        }
+        @media (max-width: 600px) {
+            #gameSettings { top: 10px; left: 10px; }
+            #gameSettingsPanel { width: min(310px, calc(100vw - 28px)); }
+        }
+    `;
+    document.head.appendChild(settingsStyle);
+
+    const settings = document.createElement("div");
+    settings.id = "gameSettings";
+    settings.innerHTML = `
+        <button id="gameSettingsButton" type="button" aria-label="Opcje dźwięku" title="Opcje dźwięku">⚙</button>
+        <div id="gameSettingsPanel">
+            <h2>Opcje</h2>
+            <div class="game-setting-row">
+                <div class="game-setting-label">
+                    <span>Motyw muzyczny</span>
+                    <button id="musicToggle" class="game-setting-toggle" type="button" aria-label="Włącz lub wyłącz motyw muzyczny"></button>
+                </div>
+            </div>
+            <div class="game-setting-row">
+                <div class="game-setting-label">
+                    <span>Głośność menu</span>
+                    <span id="musicVolumeValue" class="game-setting-value"></span>
+                </div>
+                <input id="musicVolume" class="game-setting-range" type="range" min="0" max="100" step="1">
+            </div>
+            <div class="game-setting-row">
+                <div class="game-setting-label">
+                    <span>Efekty dźwiękowe</span>
+                    <button id="effectsToggle" class="game-setting-toggle" type="button" aria-label="Włącz lub wyłącz efekty dźwiękowe"></button>
+                </div>
+            </div>
+            <div class="game-setting-row">
+                <div class="game-setting-label">
+                    <span>Głośność efektów</span>
+                    <span id="effectsVolumeValue" class="game-setting-value"></span>
+                </div>
+                <input id="effectsVolume" class="game-setting-range" type="range" min="0" max="100" step="1">
+            </div>
+        </div>
+    `;
+    document.body.appendChild(settings);
+
+    const musicToggle = document.getElementById("musicToggle");
+    const effectsToggle = document.getElementById("effectsToggle");
+    const musicVolume = document.getElementById("musicVolume");
+    const effectsVolume = document.getElementById("effectsVolume");
+    const musicVolumeValue = document.getElementById("musicVolumeValue");
+    const effectsVolumeValue = document.getElementById("effectsVolumeValue");
+
+    const refreshAudioSettingsUI = () => {
+        musicToggle.classList.toggle("active", audioSettings.musicEnabled);
+        effectsToggle.classList.toggle("active", audioSettings.effectsEnabled);
+        musicVolume.value = Math.round(audioSettings.musicVolume * 100);
+        effectsVolume.value = Math.round(audioSettings.effectsVolume * 100);
+        musicVolumeValue.textContent = musicVolume.value + "%";
+        effectsVolumeValue.textContent = effectsVolume.value + "%";
+    };
+
+    musicToggle.addEventListener("click", event => {
+        event.stopPropagation();
+        audioSettings.musicEnabled = !audioSettings.musicEnabled;
+        localStorage.setItem("widzewMusicEnabled", String(audioSettings.musicEnabled));
+        if (audioSettings.musicEnabled) {
+            gameMusic.start();
+        } else {
+            gameMusic.stop();
+        }
+        refreshAudioSettingsUI();
+    });
+
+    effectsToggle.addEventListener("click", event => {
+        event.stopPropagation();
+        audioSettings.effectsEnabled = !audioSettings.effectsEnabled;
+        localStorage.setItem("widzewEffectsEnabled", String(audioSettings.effectsEnabled));
+        refreshAudioSettingsUI();
+    });
+
+    musicVolume.addEventListener("input", event => {
+        const value = Number(event.target.value) / 100;
+        audioSettings.musicVolume = value;
+        gameMusic.setVolume(value);
+        refreshAudioSettingsUI();
+    });
+
+    effectsVolume.addEventListener("input", event => {
+        const value = Number(event.target.value) / 100;
+        audioSettings.effectsVolume = value;
+        localStorage.setItem("widzewEffectsVolume", String(value));
+        refreshAudioSettingsUI();
+    });
+
+    const settingsButton = document.getElementById("gameSettingsButton");
+    settingsButton.addEventListener("click", event => {
+        event.stopPropagation();
+        settings.classList.toggle("open");
+    });
+    document.addEventListener("click", event => {
+        if (!settings.contains(event.target)) settings.classList.remove("open");
+    });
+    refreshAudioSettingsUI();
 
     const startMusicAfterFirstInteraction = () => {
         if (!gameMusic.excluded) gameMusic.start();
