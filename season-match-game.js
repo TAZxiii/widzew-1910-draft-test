@@ -74,10 +74,17 @@
   const crowdAudio = {
     audio: null,
     track: null,
+    ducked: false,
+    duckMultiplier: 1,
+    setDucked(value){
+      this.ducked = Boolean(value);
+      this.duckMultiplier = this.ducked ? 0.08 : 1;
+      this.applyVolume();
+    },
     baseVolume(){
       const settings = window.__widzewAudioSettings || {};
       const effectsVolume = Number(settings.effectsVolume);
-      return Math.min(1, Math.max(0, (Number.isFinite(effectsVolume) ? effectsVolume : 0.7) * 0.30));
+      return Math.min(1, Math.max(0, (Number.isFinite(effectsVolume) ? effectsVolume : 0.7) * 0.30 * this.duckMultiplier));
     },
     applyVolume(){
       if(!this.audio) return;
@@ -169,11 +176,13 @@
       const baseVolume = Math.min(1, Math.max(0, (Number.isFinite(effectsVolume) ? effectsVolume : 0.7) * 0.30));
       audio.volume = settings.effectsEnabled === false ? 0 : baseVolume;
       this.audio = audio;
+      crowdAudio.setDucked(true);
       audio.addEventListener('ended', () => {
         this.audio = null;
         const minute = Number(match?.minute || 0);
         if(minute >= 1 && minute <= 69) crowdGoalFollowAudio.play(6);
         else if(minute >= 70) crowdGoalFollowAudio.play(2);
+        else crowdAudio.setDucked(false);
       }, {once:true});
       audio.play().catch(error => console.warn('Nie udało się uruchomić crowd/5.mp3:', error));
     },
@@ -201,7 +210,7 @@
       audio.volume = settings.effectsEnabled === false ? 0 : baseVolume;
       this.audio = audio;
       audio.play().catch(error => console.warn(`Nie udało się uruchomić crowd/${file}.mp3:`, error));
-      audio.addEventListener('ended', () => { this.audio = null; }, {once:true});
+      audio.addEventListener('ended', () => { this.audio = null; crowdAudio.setDucked(false); }, {once:true});
     },
     applyVolume(){
       if(!this.audio) return;
