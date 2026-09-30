@@ -177,6 +177,57 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // MOBILE EASTER EGG: 4 kliknięcia logo WTM otwierają pole wpisania kodu.
+    const wtmLogo = document.querySelector(".wtm-start-logo");
+    const mobileCodeModal = document.getElementById("musicEasterEggCodeModal");
+    const mobileCodeInput = document.getElementById("musicEasterEggCodeInput");
+    const mobileCodeConfirm = document.getElementById("musicEasterEggCodeConfirm");
+    const mobileCodeClose = document.getElementById("closeMusicEasterEggCode");
+    let wtmTapCount = 0;
+    let wtmLastTap = 0;
+
+    const isMobileDevice = () => window.matchMedia("(pointer: coarse)").matches && window.innerWidth <= 900;
+
+    const openMobileCodeModal = () => {
+        if (!isMobileDevice()) return;
+        mobileCodeInput.value = "";
+        mobileCodeModal?.classList.remove("hidden");
+        setTimeout(() => mobileCodeInput?.focus(), 50);
+    };
+
+    const closeMobileCodeModal = () => mobileCodeModal?.classList.add("hidden");
+
+    const submitMobileCode = () => {
+        if (mobileCodeInput.value.trim() !== "1910") {
+            mobileCodeInput.value = "";
+            return;
+        }
+        closeMobileCodeModal();
+        gameMusic.playSpecial();
+        easterEggModal?.classList.remove("hidden");
+    };
+
+    wtmLogo?.addEventListener("click", () => {
+        if (!isMobileDevice()) return;
+        const now = Date.now();
+        if (now - wtmLastTap > 1400) wtmTapCount = 0;
+        wtmLastTap = now;
+        wtmTapCount++;
+        if (wtmTapCount === 4) {
+            wtmTapCount = 0;
+            openMobileCodeModal();
+        }
+    });
+
+    mobileCodeConfirm?.addEventListener("click", submitMobileCode);
+    mobileCodeInput?.addEventListener("keydown", event => {
+        if (event.key === "Enter") submitMobileCode();
+    });
+    mobileCodeClose?.addEventListener("click", closeMobileCodeModal);
+    mobileCodeModal?.addEventListener("click", event => {
+        if (event.target === mobileCodeModal) closeMobileCodeModal();
+    });
+
     window.__widzewAudioSettings = audioSettings;
     window.__widzewGameMusic = gameMusic;
     window.setGameMusicExcluded = value => gameMusic.setExcluded(value);
