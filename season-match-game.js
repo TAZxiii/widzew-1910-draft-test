@@ -35,7 +35,26 @@
       b.className='wsm-primary wsm-goal-resume';
       b.textContent='Wznowienie od środka boiska';
       b.onclick=()=>{b.remove();if(modal.isConnected)modal.remove();resume()};
-      status.appendChild(b);
+      // Na telefonie przycisk wznowienia ma być pod wynikiem,
+      // tak samo jak przycisk „DRUGA POŁOWA”.
+      if(window.matchMedia('(max-width:700px)').matches){
+        const wrap=document.querySelector('#wsm-overlay .wsm-wrap');
+        const scoreBox=wrap?.querySelector('.wsm-score')?.closest('.wsm-box');
+        if(wrap&&scoreBox){
+          b.style.display='block';
+          b.style.width='100%';
+          b.style.margin='0 0 10px 0';
+          b.style.textAlign='center';
+          b.style.position='sticky';
+          b.style.top='0';
+          b.style.zIndex='100000';
+          wrap.insertBefore(b,wrap.querySelector('.wsm-layout'));
+        }else{
+          status.appendChild(b);
+        }
+      }else{
+        status.appendChild(b);
+      }
     }
   }
 
