@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const path = candidates.splice(index, 1)[0];
                 const audio = new Audio(path);
                 audio.loop = true;
-                audio.volume = 0.35;
+                audio.volume = gameMusic.volume;
 
                 try {
                     await audio.play();
