@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // MUZYKA MENU
     // Natywna redukcja głośności muzyki menu — suwak użytkownika działa dodatkowo.
-    const MENU_MUSIC_NATIVE_VOLUME = 1 / 3;
+    const MENU_MUSIC_NATIVE_VOLUME = 0.1;
     // Startuje po pierwszej reakcji użytkownika na stronę.
     // Działa we wszystkich trybach poza interaktywnym „Rozegraj mecz”.
     const gameMusic = {
