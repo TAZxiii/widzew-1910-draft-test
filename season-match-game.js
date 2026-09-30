@@ -156,7 +156,15 @@
   const esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
   const setText=(id,text)=>{const e=document.getElementById(id);if(e)e.textContent=text};
   function feed(text,minute){const e=document.getElementById('wsm-feed');if(e)e.insertAdjacentHTML('afterbegin',`<div class="wsm-row"><b>${minute!=null?esc(minute)+"' ":''}</b>${esc(text)}</div>`)}
-  function renderScore(){const a=match.opponent.home?match.score.widzew:match.score.opponent,b=match.opponent.home?match.score.opponent:match.score.widzew;setText('wsm-score',`${a} : ${b}`);setText('wsm-minute',match.minute!=null?`${match.minute}'`:'—')}
+  function displayMinute(){
+    if(!match)return '—';
+    const minute=Number(match.minute);
+    if(!Number.isFinite(minute))return '—';
+    if(match.half===1 && minute>45)return '45+'+(minute-45)+"'";
+    if(match.half===2 && minute>90)return '90+'+(minute-90)+"'";
+    return minute+"'";
+  }
+  function renderScore(){const a=match.opponent.home?match.score.widzew:match.score.opponent,b=match.opponent.home?match.score.opponent:match.score.widzew;setText('wsm-score',a+' : '+b);setText('wsm-minute',displayMinute())}
   function renderScorers(){const e=document.getElementById('wsm-scorers');if(e)e.innerHTML=match.scorers.length?match.scorers.map(s=>`<div>${esc(s.player)} — ${s.minute}'</div>`).join(''):'Brak bramek.'}
   function eventData(id){const n=Number(id);return n===10||n===110?ui.data.events.special?.[String(id)]:ui.data.events[Number(id)>=100?'DEF':'OF']?.[String(id)]}
   function actionData(id){return ui.data.actions[String(id)]||{}}
