@@ -2366,7 +2366,9 @@ h1 span {
     height: 190px;
     object-fit: contain;
     z-index: 2;
-    pointer-events: none;
+    pointer-events: auto;
+    cursor: pointer;
+    touch-action: manipulation;
 }
 
 @media (max-width: 600px) {
