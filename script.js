@@ -2489,12 +2489,8 @@ const COACH_DISMISSAL_RULES = {
 // triggerRound = kolejka, po której komunikat ma się pojawić.
 // matches = liczba meczów z kadencji brana do statystyk; null = wszystkie rozegrane przez gracza do tej kolejki.
 const COACH_MILESTONE_RULES = {
-    // targetMatches = liczba ligowych meczów rzeczywiście poprowadzonych
-    // przez danego trenera w wybranym okresie.
-    // triggerRound = kolejka, po której ten trener osiągnął ten licznik.
-    // actual = rzeczywiste osiągnięcia Widzewa w tym samym okresie.
     1:  { triggerRound: 34, targetMatches: 34, actual: { matches: 34, position: 12, wins: 11, draws: 8, losses: 15, goalsFor: 38, goalsAgainst: 47, points: 41 } },
-    2:  { triggerRound: 7,  targetMatches: 7,  actual: { matches: 7,  position: 12, wins: 2, draws: 3, losses: 4, goalsFor: 8, goalsAgainst: 12, points: 7 } },
+    2:  { triggerRound: 7,  targetMatches: 7, actual: { matches: 7, position: 12, wins: 2, draws: 3, losses: 4, goalsFor: 8, goalsAgainst: 12, points: 7 } },
     3:  { triggerRound: 34, targetMatches: 27, actual: { matches: 27, position: 9, wins: 11, draws: 6, losses: 10, goalsFor: 37, goalsAgainst: 34, points: 39 } },
     4:  { triggerRound: 22, targetMatches: 22, actual: { matches: 22, position: 12, wins: 7, draws: 5, losses: 10, goalsFor: 26, goalsAgainst: 37, points: 26 } },
     5:  { triggerRound: 25, targetMatches: 3, actual: { matches: 3, position: 13, wins: 1, draws: 1, losses: 1, goalsFor: 2, goalsAgainst: 2, points: 4 } },
@@ -2504,9 +2500,76 @@ const COACH_MILESTONE_RULES = {
     9:  { triggerRound: 23, targetMatches: 12, actual: { matches: 12, position: 17, wins: 3, draws: 2, losses: 7, goalsFor: 12, goalsAgainst: 18, points: 11 } },
     10: { triggerRound: 34, targetMatches: 11, actual: { matches: 11, position: 14, wins: 5, draws: 3, losses: 3, goalsFor: 12, goalsAgainst: 8, points: 18 } },
     11: { triggerRound: 7,  targetMatches: 7,  actual: { matches: 7, position: 13, wins: 1, draws: 4, losses: 2, goalsFor: 10, goalsAgainst: 10, points: 7 } },
-    12: { triggerRound: 9,  targetMatches: 2,  actual: { matches: 2, position: 12, wins: 0, draws: 2, losses: 0, goalsFor: 3, goalsAgainst: 3, points: 2 } }
+    12: { triggerRound: 9,  targetMatches: 2, actual: { matches: 2, position: 12, wins: 0, draws: 2, losses: 0, goalsFor: 3, goalsAgainst: 3, points: 2 } }
 };
 
+// Warunki decyzji zarządu po podsumowaniu kadencji.
+const COACH_DECISION_RULES = {
+    1: [
+        { when: s => s.position <= 13, message: "Brawo osiągnąłeś lepszy wynik niż prawdziwy trener. Możesz prowadzić zespół w kolejnym sezonie lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.position === 14, message: "Osiągnąłeś ten sam wynik co prawdziwy trener. Możesz prowadzić zespół w kolejnym sezonie lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.position === 15, message: "Osiągnąłeś wynik gorszy niż prawdziwy trener, ale zarząd chce Ci dać kolejną szansę. Możesz prowadzić zespół w kolejnym sezonie lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.position >= 16, message: "Osiągnąłeś wynik znacznie gorszy niż prawdziwy trener. Doprowadziłeś do spadku, zostałeś zwolniony. Gra skończona.", canContinue: false }
+    ],
+    2: [
+        { when: s => s.points >= 8, message: "Brawo osiągnąłeś lepszy wynik niż prawdziwy trener. Możesz prowadzić zespół w kolejnych meczach lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.points <= 7 && s.derbyLost, message: "Zarząd jest niezadowolony z Twoich wyników, a do tego przegrałeś Derby Łodzi. Zostałeś zwolniony. Gra skończona.", canContinue: false },
+        { when: s => s.points <= 7, message: "Zarząd jest niezadowolony z Twoich wyników, zostałeś zwolniony. Gra skończona.", canContinue: false }
+    ],
+    3: [
+        { when: s => s.position <= 8, message: "Brawo osiągnąłeś lepszy wynik niż prawdziwy trener. Możesz prowadzić zespół w kolejnym sezonie lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.position === 9, message: "Osiągnąłeś ten sam wynik co prawdziwy trener. Możesz prowadzić zespół w kolejnym sezonie lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.position >= 10 && s.position <= 11, message: "Osiągnąłeś wynik gorszy niż prawdziwy trener, ale zarząd chce Ci dać kolejną szansę. Możesz prowadzić zespół w kolejnym sezonie lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.position >= 16, message: "Osiągnąłeś wynik znacznie gorszy niż prawdziwy trener. Doprowadziłeś do spadku, zostałeś zwolniony. Gra skończona.", canContinue: false },
+        { when: s => s.position >= 12 && s.position <= 15, message: "Osiągnąłeś wynik znacznie gorszy niż prawdziwy trener. Zostałeś zwolniony. Gra skończona.", canContinue: false }
+    ],
+    4: [
+        { when: s => s.position <= 11, message: "Brawo osiągnąłeś lepszy wynik niż prawdziwy trener. Możesz prowadzić zespół w kolejnym sezonie lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.position === 12, message: "Osiągnąłeś ten sam wynik co prawdziwy trener. Zarząd jest niezadowolony z Twoich wyników. Zostałeś zwolniony. Gra skończona", canContinue: false },
+        { when: s => s.position >= 13, message: "Osiągnąłeś wynik gorszy niż prawdziwy trener. Zostałeś zwolniony. Gra skończona.", canContinue: false }
+    ],
+    5: [
+        { when: s => s.points >= 5, message: "Brawo osiągnąłeś lepszy wynik niż prawdziwy trener. Możesz prowadzić zespół w kolejnych meczach lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.points <= 4, message: "Zarząd jest niezadowolony z Twoich wyników, zostałeś zwolniony. Gra skończona.", canContinue: false }
+    ],
+    6: [
+        { when: s => s.position <= 12, message: "Brawo osiągnąłeś lepszy wynik niż prawdziwy trener. Możesz prowadzić zespół w kolejnym sezonie lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.position === 13, message: "Osiągnąłeś ten sam wynik co prawdziwy trener. Możesz prowadzić zespół w kolejnym sezonie lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.position >= 14 && s.position <= 15, message: "Osiągnąłeś wynik gorszy niż prawdziwy trener, ale zarząd chce Ci dać kolejną szansę. Możesz prowadzić zespół w kolejnym sezonie lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.position >= 16, message: "Osiągnąłeś wynik znacznie gorszy niż prawdziwy trener. Doprowadziłeś do spadku, zostałeś zwolniony. Gra skończona.", canContinue: false }
+    ],
+    7: [
+        { when: s => s.points >= 8, message: "Brawo osiągnąłeś lepszy wynik niż prawdziwy trener. Możesz prowadzić zespół w kolejnych meczach lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.points <= 7, message: "Zarząd jest niezadowolony z Twoich wyników, zostałeś zwolniony. Gra skończona.", canContinue: false }
+    ],
+    8: [
+        { when: s => s.points >= 7, message: "Brawo osiągnąłeś lepszy wynik niż prawdziwy trener, ale \"afera grecka\" Cię pogrążyła. Zostałeś zwolniony. Gra skończona.", canContinue: false },
+        { when: s => s.points === 6, message: "Osiągnąłeś ten sam wynik co prawdziwy trener, ale \"afera grecka\" Cię pogrążyła. Zostałeś zwolniony. Gra skończona.", canContinue: false },
+        { when: s => s.points <= 5, message: "Osiągnąłeś wynik gorszy niż prawdziwy trener, a do tego \"afera grecka\" Cię pogrążyła. Zostałeś zwolniony. Gra skończona.", canContinue: false }
+    ],
+    9: [
+        { when: s => s.position <= 15, message: "Brawo osiągnąłeś lepszy wynik niż prawdziwy trener. Możesz prowadzić zespół w kolejnym sezonie lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.position === 16, message: "Osiągnąłeś wynik nie co prawdziwy trener, ale nadal jesteś w strefie spadkowej. Zostałeś zwolniony. Gra skończona.", canContinue: false },
+        { when: s => s.position === 17, message: "Osiągnąłeś wynik ten sam co prawdziwy trener. Zostałeś zwolniony. Gra skończona.", canContinue: false },
+        { when: s => s.position >= 18, message: "Osiągnąłeś wynik gorszy niż prawdziwy trener. Doprowadziłeś do spadku, zostałeś zwolniony. Gra skończona.", canContinue: false }
+    ],
+    10: [
+        { when: s => s.position <= 13, message: "Brawo osiągnąłeś lepszy wynik niż prawdziwy trener. Możesz prowadzić zespół w kolejnym sezonie lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.position === 14, message: "Osiągnąłeś ten sam wynik co prawdziwy trener. Możesz prowadzić zespół w kolejnym sezonie lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.position === 15, message: "Osiągnąłeś wynik gorszy niż prawdziwy trener, ale zarząd chce Ci dać kolejną szansę. Możesz prowadzić zespół w kolejnym sezonie lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.position >= 16, message: "Osiągnąłeś wynik znacznie gorszy niż prawdziwy trener. Doprowadziłeś do spadku, zostałeś zwolniony. Gra skończona.", canContinue: false }
+    ],
+    11: [
+        { when: s => s.points >= 8, message: "Brawo osiągnąłeś lepszy wynik niż prawdziwy trener. Możesz prowadzić zespół w kolejnych meczach lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.points === 7, message: "Osiągnąłeś ten sam wynik co prawdziwy trener. Zarząd jest niezadowolony z Twoich wyników, zostałeś zwolniony. Gra skończona.", canContinue: false },
+        { when: s => s.points <= 6, message: "Osiągnąłeś wynik gorszy niż prawdziwy trener. Zostałeś zwolniony. Gra skończona.", canContinue: false }
+    ],
+    12: [
+        { when: s => s.points >= 3, message: "Brawo osiągnąłeś lepszy wynik niż prawdziwy trener, ale Mateusz Stolarski dalej jest trenerem Widzewa. Możesz prowadzić zespół w kolejnych meczach lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.points === 2, message: "Osiągnąłeś wynik ten sam co prawdziwy trener, ale Mateusz Stolarski dalej jest trenerem Widzewa. Możesz prowadzić zespół w kolejnych meczach lub odejść i zakończyć grę.", canContinue: true },
+        { when: s => s.points <= 1, message: "Osiągnąłeś wynik gorszy niż prawdziwy trener, ale Mateusz Stolarski dalej jest trenerem Widzewa. Możesz prowadzić zespół w kolejnych meczach lub odejść i zakończyć grę.", canContinue: true }
+    ]
+};
 function coachResultsPoints(results) {
     return results.reduce((sum, match) => {
         const gf = Number(match.gf || 0);
@@ -2572,7 +2635,8 @@ function getCoachMilestoneStatus() {
         goalsFor,
         goalsAgainst,
         position: standings.indexOf(widzewRow) + 1,
-        actual: rule.actual
+        actual: rule.actual,
+        periodResults
     };
 }
 function showCoachMilestone(status) {
@@ -2612,6 +2676,7 @@ function showCoachMilestone(status) {
         document.body.appendChild(milestoneModal);
         milestoneModal.querySelector("#coachMilestoneClose").addEventListener("click", () => {
             milestoneModal.remove();
+            showCoachDecision(status);
         });
     }
 
@@ -2655,6 +2720,68 @@ function checkCoachMilestone() {
     return showCoachMilestone(status);
 }
 window.checkCoachMilestone = checkCoachMilestone;
+
+function getCoachDecisionStatus(status) {
+    if (!status) return null;
+
+    const rules = COACH_DECISION_RULES[Number(status.coachId)];
+    if (!rules) return null;
+
+    const periodResults = status.periodResults || [];
+    const derby = periodResults.find(match => {
+        const opponent = String(match.opponent || "").toLowerCase().trim();
+        return opponent === "łks łódź" || opponent === "lks łódź";
+    });
+    const derbyLost = Boolean(derby && Number(derby.gf) < Number(derby.ga));
+    const decisionStatus = { ...status, derbyLost };
+    const decision = rules.find(rule => rule.when(decisionStatus));
+    return decision ? { ...decisionStatus, decision } : null;
+}
+
+function showCoachDecision(status) {
+    const activeTrainer = window.__widzewSelectedTrainer;
+    if (!activeTrainer || !status || window.__coachDecisionShown) return false;
+
+    const decisionStatus = getCoachDecisionStatus(status);
+    if (!decisionStatus) return false;
+
+    const safe = value => String(value ?? "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+
+    const canContinue = Boolean(decisionStatus.decision.canContinue);
+    let modal = document.getElementById("coachDecisionModal");
+    if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "coachDecisionModal";
+        modal.style.cssText =
+            "position:fixed;inset:0;z-index:1000001;display:flex;align-items:center;justify-content:center;" +
+            "background:rgba(0,0,0,.82);padding:20px;box-sizing:border-box;";
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML =
+        '<div style="position:relative;max-width:680px;width:100%;max-height:90vh;overflow:auto;background:#191919;color:#fff;border:2px solid #e30613;border-radius:14px;padding:30px;box-sizing:border-box;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.7);">' +
+        (canContinue ? '<h2 style="margin:0 0 20px;">DECYZJA ZARZĄDU</h2>' : '<h2 style="margin:0 0 20px;color:#e30613;">ZWOLNIENIE</h2>') +
+        '<p style="font-size:18px;line-height:1.55;margin:0 0 24px;">' + safe(decisionStatus.decision.message) + '</p>' +
+        (canContinue
+            ? '<button id="coachDecisionContinue" class="season-main-button" type="button">KONTYNUUJ GRĘ</button>'
+            : '<button id="coachDecisionEnd" class="season-main-button" type="button">ZAKOŃCZ GRĘ</button>') +
+        '</div>';
+
+    if (canContinue) {
+        modal.querySelector("#coachDecisionContinue")?.addEventListener("click", () => modal.remove());
+    } else {
+        window.__coachDismissed = true;
+        modal.querySelector("#coachDecisionEnd")?.addEventListener("click", () => {
+            modal.remove();
+            window.__widzewGameMode = null;
+        });
+    }
+
+    window.__coachDecisionShown = true;
+    return true;
+}
 
 function getCoachDismissalStatus() {
     const activeTrainer = window.__widzewSelectedTrainer;
@@ -2846,11 +2973,6 @@ function simulateCurrentWidzewMatch() {
         return;
     }
 
-    if (checkCoachDismissal()) {
-        renderPlayableSeason();
-        return;
-    }
-
     renderPlayableSeason();
 }
 function simulateWholeSeason() {
@@ -2966,8 +3088,6 @@ function renderFinalSeason() {
     }
     if (actions) actions.innerHTML = `<div class="season-finished-note">SEZON ZAKOŃCZONY</div>`;
 
-    if (window.__widzewGameMode === "coach" && checkCoachDismissal()) return;
-
     // W trybie GRACZ wynik punktowy pojawia się po zamknięciu
     // okna "Wesprzyj twórcę". Tryb TRENER pozostaje bez punktacji.
     window.__playerScorePending = window.__widzewGameMode === "player";
@@ -2990,6 +3110,7 @@ async function initSeasonMode(mode) {
     window.__playerScorePending = false;
     window.__coachDismissed = false;
     window.__coachMilestoneShown = false;
+    window.__coachDecisionShown = false;
     seasonGameState.widzewFixtures=[];
     const loading=document.getElementById("seasonLoading");
     const content=document.getElementById("seasonBoardContent");
