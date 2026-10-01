@@ -946,6 +946,9 @@ function formatSquadValue(value) {
                     strength: Number.isFinite(coachStrength) ? coachStrength : 0,
                     startRound: Math.max(1, Number(season["KolejkaStartowa"]) || 1)
                 };
+                // Udostępniamy wybranego trenera kodowi sezonu znajdującemu się
+                // poza zakresem DOMContentLoaded.
+                window.__widzewSelectedTrainer = selectedTrainer;
                 window.__widzewTrainerStartRound = selectedTrainer.startRound;
                 // Tryb TRENER przekazuje do meczu siłę z dokładnie wybranego rekordu sezonu.
                 window.__widzewGameMode = "coach";
@@ -988,6 +991,7 @@ function formatSquadValue(value) {
 
         document.getElementById("trainerBack").addEventListener("click", () => {
             selectedTrainer = null;
+            window.__widzewSelectedTrainer = null;
             window.__widzewCoachStrength = 0;
 
             const content = coachScreen.querySelector(".coach-content");
@@ -2511,16 +2515,18 @@ function coachResultsPoints(results) {
 }
 
 function getCoachMilestoneStatus() {
-    // Komunikat istnieje wyłącznie w trybie TRENER.
-    if (window.__widzewGameMode !== "coach" || !selectedTrainer || window.__coachMilestoneShown) return null;
+    // Komunikat działa poza DOMContentLoaded, dlatego korzysta z globalnego
+    // odnośnika do wybranego trenera zamiast z lokalnego selectedTrainer.
+    const activeTrainer = window.__widzewSelectedTrainer;
+    if (window.__widzewGameMode !== "coach" || !activeTrainer || window.__coachMilestoneShown) return null;
 
-    const coachId = Number(selectedTrainer.faceId);
+    const coachId = Number(activeTrainer.faceId);
     const rule = COACH_MILESTONE_RULES[coachId];
     if (!rule) return null;
 
     const triggerRound = Number(rule.triggerRound);
     const targetMatches = Number(rule.targetMatches);
-    const startRound = Math.max(1, Number(selectedTrainer.startRound) || 1);
+    const startRound = Math.max(1, Number(activeTrainer.startRound) || 1);
     const currentRound = Number(seasonGameState.currentRound) || 0;
 
     // Najważniejszy warunek: liczymy WYŁĄCZNIE mecze rozegrane przez gracza
@@ -2568,6 +2574,7 @@ function getCoachMilestoneStatus() {
     };
 }
 function showCoachMilestone(status) {
+    const activeTrainer = window.__widzewSelectedTrainer;
     const modal = document.getElementById("coachDismissalModal");
     const content = document.getElementById("coachDismissalContent");
     if (!modal || !content || !status) return false;
@@ -2582,7 +2589,7 @@ function showCoachMilestone(status) {
 
     content.innerHTML =
         "<h2>📊 PODSUMOWANIE</h2>" +
-        "<p><strong>" + safe(selectedTrainer.first) + " " + safe(selectedTrainer.last) +
+        "<p><strong>" + safe(activeTrainer.first) + " " + safe(activeTrainer.last) +
         "</strong> – osiągnięto wymagany licznik <strong>" + status.matches +
         " / " + status.targetMatches + " meczów</strong> Twojej kadencji.</p>" +
         "<p><strong>Rozegrane mecze: " + status.playedMatches + " / " + status.targetMatches + "</strong></p>" +
@@ -2634,9 +2641,10 @@ function checkCoachMilestone() {
 window.checkCoachMilestone = checkCoachMilestone;
 
 function getCoachDismissalStatus() {
-    if (window.__widzewGameMode !== "coach" || !selectedTrainer || window.__coachDismissed) return null;
+    const activeTrainer = window.__widzewSelectedTrainer;
+    if (window.__widzewGameMode !== "coach" || !activeTrainer || window.__coachDismissed) return null;
 
-    const coachId = Number(selectedTrainer.faceId);
+    const coachId = Number(activeTrainer.faceId);
     const rule = COACH_DISMISSAL_RULES[coachId];
     if (!rule) return null;
 
@@ -2667,7 +2675,7 @@ function getCoachDismissalStatus() {
     }
 
     if (rule.type === "coachPoints") {
-        const startRound = Math.max(1, Number(selectedTrainer.startRound) || 1);
+        const startRound = Math.max(1, Number(activeTrainer.startRound) || 1);
         const results = seasonGameState.widzewResults
             .filter(match => Number(match.round) >= startRound)
             .sort((a, b) => Number(a.round) - Number(b.round));
@@ -2712,7 +2720,7 @@ function showCoachDismissal(status) {
             ? '<img class="coach-dismissal-image" src="' + status.rule.image + '" alt="">'
             : "") +
         "<h2>ZWOLNIENIE!</h2>" +
-        "<p><strong>" + safe(selectedTrainer.first) + " " + safe(selectedTrainer.last) +
+        "<p><strong>" + safe(activeTrainer.first) + " " + safe(activeTrainer.last) +
         "</strong> został zwolniony z funkcji pierwszego trenera Widzewa Łódź.</p>" +
         "<p>" + reason + "</p>" +
         "<p class=\"coach-dismissal-end\">KARIERA TRENERA ZAKOŃCZONA</p>";
