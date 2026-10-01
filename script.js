@@ -2547,7 +2547,7 @@ function showCoachMilestone(status) {
         "<p><strong>" + safe(selectedTrainer.first) + " " + safe(selectedTrainer.last) +
         "</strong> – podsumowanie pierwszych <strong>" + status.matches +
         " meczów</strong> Twojej kadencji.</p>" +
-        "<div style="margin:18px 0;line-height:1.8;text-align:left;">" +
+        "<div style=\"margin:18px 0;line-height:1.8;text-align:left;\">" +
         "<p><strong>Aktualne miejsce:</strong> " + status.position + ".</p>" +
         "<p><strong>Punkty:</strong> " + status.points + "</p>" +
         "<p><strong>Zwycięstwa:</strong> " + status.wins + "</p>" +
