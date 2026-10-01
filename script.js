@@ -2589,7 +2589,32 @@ function showCoachMilestone(status) {
         "</div>" +
         "<p>Stan na koniec <strong>" + status.round + ". kolejki</strong>.</p>";
 
-    modal.classList.remove("hidden");
+    // Używamy osobnego, dynamicznego okna dla podsumowania.
+    // Nie korzystamy z coachDismissalModal, ponieważ ten modal jest
+    // wykorzystywany również przez ekran zwolnienia i może być zasłaniany
+    // przez warstwy trybu meczu.
+    let milestoneModal = document.getElementById("coachMilestoneModal");
+    if (!milestoneModal) {
+        milestoneModal = document.createElement("div");
+        milestoneModal.id = "coachMilestoneModal";
+        milestoneModal.style.cssText =
+            "position:fixed;inset:0;z-index:1000000;display:flex;align-items:center;justify-content:center;" +
+            "background:rgba(0,0,0,.78);padding:20px;box-sizing:border-box;";
+        milestoneModal.innerHTML =
+            '<div style="position:relative;max-width:560px;width:100%;background:#191919;color:#fff;border:2px solid #e30613;border-radius:14px;padding:28px;box-sizing:border-box;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.7);">' +
+            '<button id="coachMilestoneClose" type="button" style="position:absolute;right:12px;top:10px;background:#333;color:#fff;border:0;border-radius:7px;font-size:26px;line-height:1;padding:4px 10px;cursor:pointer;">×</button>' +
+            '<div id="coachMilestoneContent"></div>' +
+            '</div>';
+        document.body.appendChild(milestoneModal);
+        milestoneModal.querySelector("#coachMilestoneClose").addEventListener("click", () => {
+            milestoneModal.remove();
+        });
+    }
+
+    const milestoneContent = milestoneModal.querySelector("#coachMilestoneContent");
+    if (!milestoneContent) return false;
+    milestoneContent.innerHTML = content.innerHTML;
+    milestoneModal.style.display = "flex";
     window.__coachMilestoneShown = true;
     return true;
 }
@@ -2752,6 +2777,13 @@ function renderRound(round) {
     document.getElementById("nextRoundButton")?.addEventListener("click",()=>{
         seasonGameState.currentRound++;
         renderPlayableSeason();
+
+        // Awaryjnie sprawdź komunikat także po przejściu do następnej kolejki.
+        // Dzięki temu jego pojawienie się nie zależy od tego, która ścieżka
+        // zapisała wynik poprzedniego meczu.
+        if (window.__widzewGameMode === "coach") {
+            checkCoachMilestone();
+        }
     });
     document.getElementById("seasonFinishButton")?.addEventListener("click",()=>{
         renderFinalSeason();
