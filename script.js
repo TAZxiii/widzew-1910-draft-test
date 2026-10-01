@@ -2481,6 +2481,24 @@ const COACH_DISMISSAL_RULES = {
     12: { type: "finalTable", minPosition: 16, maxPosition: 18, image: null }
 };
 
+// Podsumowanie kadencji w trybie TRENER.
+// triggerRound = kolejka, po której komunikat ma się pojawić.
+// matches = liczba meczów z kadencji brana do statystyk; null = wszystkie rozegrane przez gracza do tej kolejki.
+const COACH_MILESTONE_RULES = {
+    1:  { triggerRound: 34, matches: null },
+    2:  { triggerRound: 7,  matches: 7 },
+    3:  { triggerRound: 34, matches: null },
+    4:  { triggerRound: 22, matches: 22 },
+    5:  { triggerRound: 25, matches: 3 },
+    6:  { triggerRound: 34, matches: 9 },
+    7:  { triggerRound: 7,  matches: 7 },
+    8:  { triggerRound: 12, matches: 5 },
+    9:  { triggerRound: 24, matches: 12 },
+    10: { triggerRound: 34, matches: 10 },
+    11: { triggerRound: 7,  matches: 7 },
+    12: { triggerRound: 34, matches: 27 }
+};
+
 function coachResultsPoints(results) {
     return results.reduce((sum, match) => {
         const gf = Number(match.gf || 0);
@@ -2490,35 +2508,50 @@ function coachResultsPoints(results) {
 }
 
 function getCoachMilestoneStatus() {
+    // Komunikat istnieje wyłącznie w trybie TRENER.
     if (window.__widzewGameMode !== "coach" || !selectedTrainer || window.__coachMilestoneShown) return null;
 
     const coachId = Number(selectedTrainer.faceId);
-    const rule = COACH_DISMISSAL_RULES[coachId];
-    if (!rule || rule.type !== "coachPoints") return null;
+    const rule = COACH_MILESTONE_RULES[coachId];
+    if (!rule) return null;
+
+    // Komunikat pojawia się dopiero po rozegraniu konkretnej kolejki.
+    const triggerRound = Number(rule.triggerRound);
+    const triggerResult = seasonGameState.widzewResults.find(
+        match => Number(match.round) === triggerRound
+    );
+    if (!triggerResult) return null;
 
     const startRound = Math.max(1, Number(selectedTrainer.startRound) || 1);
     const results = seasonGameState.widzewResults
-        .filter(match => Number(match.round) >= startRound)
+        .filter(match =>
+            Number(match.round) >= startRound &&
+            Number(match.round) <= triggerRound
+        )
         .sort((a, b) => Number(a.round) - Number(b.round));
 
-    if (results.length < rule.matches) return null;
+    if (!results.length) return null;
 
-    const periodResults = results.slice(0, rule.matches);
+    const periodResults = rule.matches == null
+        ? results
+        : results.slice(0, Number(rule.matches));
+
+    if (periodResults.length < Number(rule.matches || 0)) return null;
+
     const points = coachResultsPoints(periodResults);
     const wins = periodResults.filter(match => Number(match.gf) > Number(match.ga)).length;
     const draws = periodResults.filter(match => Number(match.gf) === Number(match.ga)).length;
     const losses = periodResults.filter(match => Number(match.gf) < Number(match.ga)).length;
     const goalsFor = periodResults.reduce((sum, match) => sum + Number(match.gf || 0), 0);
     const goalsAgainst = periodResults.reduce((sum, match) => sum + Number(match.ga || 0), 0);
-    const round = Number(periodResults[periodResults.length - 1].round);
-    const standings = buildStandings(round);
+    const standings = buildStandings(triggerRound);
     const widzewRow = standings.find(row => row.name === "Widzew Łódź");
     if (!widzewRow) return null;
 
     return {
         coachId,
-        matches: rule.matches,
-        round,
+        matches: periodResults.length,
+        round: triggerRound,
         points,
         wins,
         draws,
@@ -2528,7 +2561,6 @@ function getCoachMilestoneStatus() {
         position: standings.indexOf(widzewRow) + 1
     };
 }
-
 function showCoachMilestone(status) {
     const modal = document.getElementById("coachDismissalModal");
     const content = document.getElementById("coachDismissalContent");
@@ -2574,10 +2606,6 @@ function getCoachDismissalStatus() {
     const coachId = Number(selectedTrainer.faceId);
     const rule = COACH_DISMISSAL_RULES[coachId];
     if (!rule) return null;
-
-    // Na tym etapie scenariusze po określonej liczbie meczów kończą się
-    // komunikatem z podsumowaniem. Pełne zwolnienie wdrożymy później.
-    if (rule.type === "coachPoints" && window.__coachMilestoneShown) return null;
 
     if (rule.type === "finalTable") {
         const finalRound = seasonGameState.widzewFixtures.length
@@ -2748,7 +2776,7 @@ function simulateCurrentWidzewMatch() {
     seasonGameState.simulatedMatchCount = Number(seasonGameState.simulatedMatchCount || 0) + 1;
     updateTopScorersFromMatch(match);
 
-    if (checkCoachMilestone()) {
+    if (window.__widzewGameMode === "coach" && checkCoachMilestone()) {
         renderPlayableSeason();
         return;
     }
