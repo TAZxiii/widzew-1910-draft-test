@@ -441,9 +441,20 @@
       if(typeof window.recordSeasonMatchScorers==="function"){
         window.recordSeasonMatchScorers(revealed);
       }
+
+      // W trybie TRENER komunikat podsumowujący musi pojawić się po każdej
+      // ścieżce ujawnienia wyniku — również przy zwykłej symulacji meczu.
+      // Najpierw odświeżamy widok, a dopiero potem otwieramy modal, żeby
+      // renderowanie kolejki nie mogło go zasłonić.
       if(typeof window.renderPlayableSeason==="function")window.renderPlayableSeason();
       enhanceLeagueTable();
       decorateVisibleScorers(revealed);
+
+      if(window.__widzewGameMode==="coach" &&
+         typeof window.checkCoachMilestone==="function" &&
+         window.checkCoachMilestone()){
+        return;
+      }
     };
 
     const originalRenderFinal=window.renderFinalSeason;
