@@ -2694,6 +2694,7 @@ function getCoachDismissalStatus() {
 }
 
 function showCoachDismissal(status) {
+    const activeTrainer = window.__widzewSelectedTrainer;
     const modal = document.getElementById("coachDismissalModal");
     const content = document.getElementById("coachDismissalContent");
     if (!modal || !content || !status) return;
