@@ -2485,18 +2485,21 @@ const COACH_DISMISSAL_RULES = {
 // triggerRound = kolejka, po której komunikat ma się pojawić.
 // matches = liczba meczów z kadencji brana do statystyk; null = wszystkie rozegrane przez gracza do tej kolejki.
 const COACH_MILESTONE_RULES = {
-    1:  { triggerRound: 34, matches: null },
-    2:  { triggerRound: 7,  matches: 7 },
-    3:  { triggerRound: 34, matches: null },
-    4:  { triggerRound: 22, matches: 22 },
-    5:  { triggerRound: 25, matches: 3 },
-    6:  { triggerRound: 34, matches: 9 },
-    7:  { triggerRound: 7,  matches: 7 },
-    8:  { triggerRound: 12, matches: 5 },
-    9:  { triggerRound: 24, matches: 12 },
-    10: { triggerRound: 34, matches: 10 },
-    11: { triggerRound: 7,  matches: 7 },
-    12: { triggerRound: 34, matches: 27 }
+    // triggerRound = najpóźniejsza kolejka, po której sprawdzamy komunikat.
+    // targetMatches = licznik meczów rozegranych przez gracza od objęcia zespołu.
+    // Komunikat pojawia się w momencie osiągnięcia targetMatches.
+    1:  { triggerRound: 34, targetMatches: 34 },
+    2:  { triggerRound: 7,  targetMatches: 7 },
+    3:  { triggerRound: 34, targetMatches: 27 },
+    4:  { triggerRound: 22, targetMatches: 22 },
+    5:  { triggerRound: 25, targetMatches: 3 },
+    6:  { triggerRound: 34, targetMatches: 9 },
+    7:  { triggerRound: 7,  targetMatches: 7 },
+    8:  { triggerRound: 12, targetMatches: 5 },
+    9:  { triggerRound: 24, targetMatches: 12 },
+    10: { triggerRound: 34, targetMatches: 10 },
+    11: { triggerRound: 7,  targetMatches: 7 },
+    12: { triggerRound: 34, targetMatches: 27 }
 };
 
 function coachResultsPoints(results) {
@@ -2515,28 +2518,29 @@ function getCoachMilestoneStatus() {
     const rule = COACH_MILESTONE_RULES[coachId];
     if (!rule) return null;
 
-    // Komunikat pojawia się dopiero po rozegraniu konkretnej kolejki.
     const triggerRound = Number(rule.triggerRound);
-    const triggerResult = seasonGameState.widzewResults.find(
-        match => Number(match.round) === triggerRound
-    );
-    if (!triggerResult) return null;
-
+    const targetMatches = Number(rule.targetMatches);
     const startRound = Math.max(1, Number(selectedTrainer.startRound) || 1);
-    const results = seasonGameState.widzewResults
-        .filter(match =>
-            Number(match.round) >= startRound &&
-            Number(match.round) <= triggerRound
-        )
+    const currentRound = Number(seasonGameState.currentRound) || 0;
+
+    // Najważniejszy warunek: liczymy WYŁĄCZNIE mecze rozegrane przez gracza
+    // od momentu objęcia zespołu. Nie czekamy na obecność konkretnego numeru
+    // kolejki w bazie wyników, bo wynik może być zapisany inną ścieżką
+    // (symulacja albo interaktywny mecz).
+    const results = (seasonGameState.widzewResults || [])
+        .filter(match => Number(match.round) >= startRound)
         .sort((a, b) => Number(a.round) - Number(b.round));
 
-    if (!results.length) return null;
+    const playedMatches = results.length;
 
-    const periodResults = rule.matches == null
-        ? results
-        : results.slice(0, Number(rule.matches));
+    // Nie pokazujemy komunikatu wcześniej niż po osiągnięciu wymaganej liczby
+    // meczów i nie wcześniej niż po kolejce wskazanej w regule.
+    if (playedMatches < targetMatches || currentRound < triggerRound) return null;
 
-    if (periodResults.length < Number(rule.matches || 0)) return null;
+    // Bierzemy dokładnie tyle ostatnio rozegranych meczów, ile przewiduje
+    // licznik dla danego trenera.
+    const periodResults = results.slice(0, targetMatches);
+    if (periodResults.length < targetMatches) return null;
 
     const points = coachResultsPoints(periodResults);
     const wins = periodResults.filter(match => Number(match.gf) > Number(match.ga)).length;
@@ -2550,7 +2554,9 @@ function getCoachMilestoneStatus() {
 
     return {
         coachId,
-        matches: periodResults.length,
+        matches: targetMatches,
+        targetMatches,
+        playedMatches,
         round: triggerRound,
         points,
         wins,
@@ -2577,8 +2583,9 @@ function showCoachMilestone(status) {
     content.innerHTML =
         "<h2>📊 PODSUMOWANIE</h2>" +
         "<p><strong>" + safe(selectedTrainer.first) + " " + safe(selectedTrainer.last) +
-        "</strong> – podsumowanie pierwszych <strong>" + status.matches +
-        " meczów</strong> Twojej kadencji.</p>" +
+        "</strong> – osiągnięto wymagany licznik <strong>" + status.matches +
+        " / " + status.targetMatches + " meczów</strong> Twojej kadencji.</p>" +
+        "<p><strong>Rozegrane mecze: " + status.playedMatches + " / " + status.targetMatches + "</strong></p>" +
         "<div style=\"margin:18px 0;line-height:1.8;text-align:left;\">" +
         "<p><strong>Aktualne miejsce:</strong> " + status.position + ".</p>" +
         "<p><strong>Punkty:</strong> " + status.points + "</p>" +
