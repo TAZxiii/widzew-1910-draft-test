@@ -2489,21 +2489,22 @@ const COACH_DISMISSAL_RULES = {
 // triggerRound = kolejka, po której komunikat ma się pojawić.
 // matches = liczba meczów z kadencji brana do statystyk; null = wszystkie rozegrane przez gracza do tej kolejki.
 const COACH_MILESTONE_RULES = {
-    // triggerRound = najpóźniejsza kolejka, po której sprawdzamy komunikat.
-    // targetMatches = licznik meczów rozegranych przez gracza od objęcia zespołu.
-    // Komunikat pojawia się w momencie osiągnięcia targetMatches.
-    1:  { triggerRound: 34, targetMatches: 34 },
-    2:  { triggerRound: 7,  targetMatches: 7 },
-    3:  { triggerRound: 34, targetMatches: 27 },
-    4:  { triggerRound: 22, targetMatches: 22 },
-    5:  { triggerRound: 25, targetMatches: 3 },
-    6:  { triggerRound: 34, targetMatches: 9 },
-    7:  { triggerRound: 7,  targetMatches: 7 },
-    8:  { triggerRound: 12, targetMatches: 5 },
-    9:  { triggerRound: 24, targetMatches: 12 },
-    10: { triggerRound: 34, targetMatches: 10 },
-    11: { triggerRound: 7,  targetMatches: 7 },
-    12: { triggerRound: 34, targetMatches: 27 }
+    // targetMatches = liczba ligowych meczów rzeczywiście poprowadzonych
+    // przez danego trenera w wybranym okresie.
+    // triggerRound = kolejka, po której ten trener osiągnął ten licznik.
+    // actual = rzeczywiste osiągnięcia Widzewa w tym samym okresie.
+    1:  { triggerRound: 34, targetMatches: 34, actual: { matches: 34, position: 12, wins: 11, draws: 8, losses: 15, goalsFor: 38, goalsAgainst: 47, points: 41 } },
+    2:  { triggerRound: 7,  targetMatches: 7,  actual: { matches: 7,  position: 12, wins: 2, draws: 3, losses: 4, goalsFor: 8, goalsAgainst: 12, points: 7 } },
+    3:  { triggerRound: 34, targetMatches: 27, actual: { matches: 27, position: 9, wins: 11, draws: 6, losses: 10, goalsFor: 37, goalsAgainst: 34, points: 39 } },
+    4:  { triggerRound: 22, targetMatches: 22, actual: { matches: 22, position: 12, wins: 7, draws: 5, losses: 10, goalsFor: 26, goalsAgainst: 37, points: 26 } },
+    5:  { triggerRound: 25, targetMatches: 3, actual: { matches: 3, position: 13, wins: 1, draws: 1, losses: 1, goalsFor: 2, goalsAgainst: 2, points: 4 } },
+    6:  { triggerRound: 34, targetMatches: 9, actual: { matches: 9, position: 13, wins: 3, draws: 1, losses: 5, goalsFor: 10, goalsAgainst: 10, points: 10 } },
+    7:  { triggerRound: 6,  targetMatches: 6, actual: { matches: 6, position: 12, wins: 2, draws: 1, losses: 3, goalsFor: 8, goalsAgainst: 7, points: 7 } },
+    8:  { triggerRound: 11, targetMatches: 5, actual: { matches: 5, position: 11, wins: 2, draws: 0, losses: 3, goalsFor: 9, goalsAgainst: 8, points: 6 } },
+    9:  { triggerRound: 23, targetMatches: 12, actual: { matches: 12, position: 17, wins: 3, draws: 2, losses: 7, goalsFor: 12, goalsAgainst: 18, points: 11 } },
+    10: { triggerRound: 34, targetMatches: 11, actual: { matches: 11, position: 14, wins: 5, draws: 3, losses: 3, goalsFor: 12, goalsAgainst: 8, points: 18 } },
+    11: { triggerRound: 7,  targetMatches: 7,  actual: { matches: 7, position: 13, wins: 1, draws: 4, losses: 2, goalsFor: 10, goalsAgainst: 10, points: 7 } },
+    12: { triggerRound: 9,  targetMatches: 2,  actual: { matches: 2, position: 12, wins: 0, draws: 2, losses: 0, goalsFor: 3, goalsAgainst: 3, points: 2 } }
 };
 
 function coachResultsPoints(results) {
@@ -2570,14 +2571,13 @@ function getCoachMilestoneStatus() {
         losses,
         goalsFor,
         goalsAgainst,
-        position: standings.indexOf(widzewRow) + 1
+        position: standings.indexOf(widzewRow) + 1,
+        actual: rule.actual
     };
 }
 function showCoachMilestone(status) {
     const activeTrainer = window.__widzewSelectedTrainer;
-    const modal = document.getElementById("coachDismissalModal");
-    const content = document.getElementById("coachDismissalContent");
-    if (!modal || !content || !status) return false;
+    if (!activeTrainer || !status) return false;
 
     const safe = value => String(value ?? "").replace(/[&<>"']/g, c => ({
         "&": "&amp;",
@@ -2587,26 +2587,16 @@ function showCoachMilestone(status) {
         "'": "&#39;"
     }[c]));
 
-    content.innerHTML =
-        "<h2>📊 PODSUMOWANIE</h2>" +
-        "<p><strong>" + safe(activeTrainer.first) + " " + safe(activeTrainer.last) +
-        "</strong> – osiągnięto wymagany licznik <strong>" + status.matches +
-        " / " + status.targetMatches + " meczów</strong> Twojej kadencji.</p>" +
-        "<p><strong>Rozegrane mecze: " + status.playedMatches + " / " + status.targetMatches + "</strong></p>" +
-        "<div style=\"margin:18px 0;line-height:1.8;text-align:left;\">" +
-        "<p><strong>Aktualne miejsce:</strong> " + status.position + ".</p>" +
-        "<p><strong>Punkty:</strong> " + status.points + "</p>" +
-        "<p><strong>Zwycięstwa:</strong> " + status.wins + "</p>" +
-        "<p><strong>Remisy:</strong> " + status.draws + "</p>" +
-        "<p><strong>Porażki:</strong> " + status.losses + "</p>" +
-        "<p><strong>Bilans bramkowy:</strong> " + status.goalsFor + ":" + status.goalsAgainst + "</p>" +
-        "</div>" +
-        "<p>Stan na koniec <strong>" + status.round + ". kolejki</strong>.</p>";
+    const actual = status.actual || {};
+    const actualPosition = actual.position ?? "—";
+    const actualPoints = actual.points ?? "—";
+    const actualWins = actual.wins ?? "—";
+    const actualDraws = actual.draws ?? "—";
+    const actualLosses = actual.losses ?? "—";
+    const actualGoalsFor = actual.goalsFor ?? "—";
+    const actualGoalsAgainst = actual.goalsAgainst ?? "—";
+    const actualMatches = actual.matches ?? status.targetMatches;
 
-    // Używamy osobnego, dynamicznego okna dla podsumowania.
-    // Nie korzystamy z coachDismissalModal, ponieważ ten modal jest
-    // wykorzystywany również przez ekran zwolnienia i może być zasłaniany
-    // przez warstwy trybu meczu.
     let milestoneModal = document.getElementById("coachMilestoneModal");
     if (!milestoneModal) {
         milestoneModal = document.createElement("div");
@@ -2615,7 +2605,7 @@ function showCoachMilestone(status) {
             "position:fixed;inset:0;z-index:1000000;display:flex;align-items:center;justify-content:center;" +
             "background:rgba(0,0,0,.78);padding:20px;box-sizing:border-box;";
         milestoneModal.innerHTML =
-            '<div style="position:relative;max-width:560px;width:100%;background:#191919;color:#fff;border:2px solid #e30613;border-radius:14px;padding:28px;box-sizing:border-box;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.7);">' +
+            '<div style="position:relative;max-width:680px;width:100%;max-height:90vh;overflow:auto;background:#191919;color:#fff;border:2px solid #e30613;border-radius:14px;padding:28px;box-sizing:border-box;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.7);">' +
             '<button id="coachMilestoneClose" type="button" style="position:absolute;right:12px;top:10px;background:#333;color:#fff;border:0;border-radius:7px;font-size:26px;line-height:1;padding:4px 10px;cursor:pointer;">×</button>' +
             '<div id="coachMilestoneContent"></div>' +
             '</div>';
@@ -2627,12 +2617,38 @@ function showCoachMilestone(status) {
 
     const milestoneContent = milestoneModal.querySelector("#coachMilestoneContent");
     if (!milestoneContent) return false;
-    milestoneContent.innerHTML = content.innerHTML;
+
+    milestoneContent.innerHTML =
+        "<h2>📊 PODSUMOWANIE KADENCJI</h2>" +
+        "<p><strong>" + safe(activeTrainer.first) + " " + safe(activeTrainer.last) +
+        "</strong> – osiągnięto okres <strong>" + status.matches +
+        " meczów</strong>, odpowiadający rzeczywistej liczbie spotkań tego trenera.</p>" +
+
+        '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:20px 0;text-align:left;">' +
+            '<div style="background:#242424;border-radius:10px;padding:16px;">' +
+                '<h3 style="margin:0 0 12px;color:#e30613;">TY</h3>' +
+                "<p style=\"margin:6px 0;\"><strong>Mecze:</strong> " + status.playedMatches + "</p>" +
+                "<p style=\"margin:6px 0;\"><strong>Miejsce:</strong> " + status.position + ".</p>" +
+                "<p style=\"margin:6px 0;\"><strong>Punkty:</strong> " + status.points + "</p>" +
+                "<p style=\"margin:6px 0;\"><strong>W-Z-P:</strong> " + status.wins + "-" + status.draws + "-" + status.losses + "</p>" +
+                "<p style=\"margin:6px 0;\"><strong>Bilans:</strong> " + status.goalsFor + ":" + status.goalsAgainst + "</p>" +
+            "</div>" +
+            '<div style="background:#242424;border-radius:10px;padding:16px;">' +
+                '<h3 style="margin:0 0 12px;color:#fff;">RZECZYWISTOŚĆ</h3>' +
+                "<p style=\"margin:6px 0;\"><strong>Mecze:</strong> " + actualMatches + "</p>" +
+                "<p style=\"margin:6px 0;\"><strong>Miejsce:</strong> " + actualPosition + ".</p>" +
+                "<p style=\"margin:6px 0;\"><strong>Punkty:</strong> " + actualPoints + "</p>" +
+                "<p style=\"margin:6px 0;\"><strong>W-Z-P:</strong> " + actualWins + "-" + actualDraws + "-" + actualLosses + "</p>" +
+                "<p style=\"margin:6px 0;\"><strong>Bilans:</strong> " + actualGoalsFor + ":" + actualGoalsAgainst + "</p>" +
+            "</div>" +
+        "</div>" +
+        "<p>Twoje wyniki są porównane z rzeczywistymi osiągnięciami Widzewa <strong>w dokładnie tym samym okresie</strong>.</p>" +
+        "<p style=\"color:#aaa;margin-top:10px;\">Podsumowanie po " + status.round + ". kolejce.</p>";
+
     milestoneModal.style.display = "flex";
     window.__coachMilestoneShown = true;
     return true;
 }
-
 function checkCoachMilestone() {
     const status = getCoachMilestoneStatus();
     if (!status) return false;
