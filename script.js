@@ -2765,7 +2765,10 @@ function showCoachDecision(status) {
         (canContinue ? '<h2 style="margin:0 0 20px;">DECYZJA ZARZĄDU</h2>' : '<h2 style="margin:0 0 20px;color:#e30613;">ZWOLNIENIE</h2>') +
         '<p style="font-size:18px;line-height:1.55;margin:0 0 24px;">' + safe(decisionStatus.decision.message) + '</p>' +
         (canContinue
-            ? '<button id="coachDecisionContinue" class="season-main-button" type="button">KONTYNUUJ GRĘ</button>'
+            ? '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">' +
+              '<button id="coachDecisionContinue" class="season-main-button" type="button">KONTYNUUJ GRĘ</button>' +
+              '<button id="coachDecisionEnd" class="season-main-button" type="button">ZAKOŃCZ GRĘ</button>' +
+              '</div>'
             : '<button id="coachDecisionEnd" class="season-main-button" type="button">ZAKOŃCZ GRĘ</button>') +
         '</div>';
 
