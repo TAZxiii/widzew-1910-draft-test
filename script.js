@@ -2599,6 +2599,7 @@ function checkCoachMilestone() {
     if (!status) return false;
     return showCoachMilestone(status);
 }
+window.checkCoachMilestone = checkCoachMilestone;
 
 function getCoachDismissalStatus() {
     if (window.__widzewGameMode !== "coach" || !selectedTrainer || window.__coachDismissed) return null;
