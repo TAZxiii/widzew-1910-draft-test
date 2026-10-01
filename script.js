@@ -2489,12 +2489,95 @@ function coachResultsPoints(results) {
     }, 0);
 }
 
+function getCoachMilestoneStatus() {
+    if (window.__widzewGameMode !== "coach" || !selectedTrainer || window.__coachMilestoneShown) return null;
+
+    const coachId = Number(selectedTrainer.faceId);
+    const rule = COACH_DISMISSAL_RULES[coachId];
+    if (!rule || rule.type !== "coachPoints") return null;
+
+    const startRound = Math.max(1, Number(selectedTrainer.startRound) || 1);
+    const results = seasonGameState.widzewResults
+        .filter(match => Number(match.round) >= startRound)
+        .sort((a, b) => Number(a.round) - Number(b.round));
+
+    if (results.length < rule.matches) return null;
+
+    const periodResults = results.slice(0, rule.matches);
+    const points = coachResultsPoints(periodResults);
+    const wins = periodResults.filter(match => Number(match.gf) > Number(match.ga)).length;
+    const draws = periodResults.filter(match => Number(match.gf) === Number(match.ga)).length;
+    const losses = periodResults.filter(match => Number(match.gf) < Number(match.ga)).length;
+    const goalsFor = periodResults.reduce((sum, match) => sum + Number(match.gf || 0), 0);
+    const goalsAgainst = periodResults.reduce((sum, match) => sum + Number(match.ga || 0), 0);
+    const round = Number(periodResults[periodResults.length - 1].round);
+    const standings = buildStandings(round);
+    const widzewRow = standings.find(row => row.name === "Widzew Łódź");
+    if (!widzewRow) return null;
+
+    return {
+        coachId,
+        matches: rule.matches,
+        round,
+        points,
+        wins,
+        draws,
+        losses,
+        goalsFor,
+        goalsAgainst,
+        position: standings.indexOf(widzewRow) + 1
+    };
+}
+
+function showCoachMilestone(status) {
+    const modal = document.getElementById("coachDismissalModal");
+    const content = document.getElementById("coachDismissalContent");
+    if (!modal || !content || !status) return false;
+
+    const safe = value => String(value ?? "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    }[c]));
+
+    content.innerHTML =
+        "<h2>📊 PODSUMOWANIE</h2>" +
+        "<p><strong>" + safe(selectedTrainer.first) + " " + safe(selectedTrainer.last) +
+        "</strong> – podsumowanie pierwszych <strong>" + status.matches +
+        " meczów</strong> Twojej kadencji.</p>" +
+        "<div style="margin:18px 0;line-height:1.8;text-align:left;">" +
+        "<p><strong>Aktualne miejsce:</strong> " + status.position + ".</p>" +
+        "<p><strong>Punkty:</strong> " + status.points + "</p>" +
+        "<p><strong>Zwycięstwa:</strong> " + status.wins + "</p>" +
+        "<p><strong>Remisy:</strong> " + status.draws + "</p>" +
+        "<p><strong>Porażki:</strong> " + status.losses + "</p>" +
+        "<p><strong>Bilans bramkowy:</strong> " + status.goalsFor + ":" + status.goalsAgainst + "</p>" +
+        "</div>" +
+        "<p>Stan na koniec <strong>" + status.round + ". kolejki</strong>.</p>";
+
+    modal.classList.remove("hidden");
+    window.__coachMilestoneShown = true;
+    return true;
+}
+
+function checkCoachMilestone() {
+    const status = getCoachMilestoneStatus();
+    if (!status) return false;
+    return showCoachMilestone(status);
+}
+
 function getCoachDismissalStatus() {
     if (window.__widzewGameMode !== "coach" || !selectedTrainer || window.__coachDismissed) return null;
 
     const coachId = Number(selectedTrainer.faceId);
     const rule = COACH_DISMISSAL_RULES[coachId];
     if (!rule) return null;
+
+    // Na tym etapie scenariusze po określonej liczbie meczów kończą się
+    // komunikatem z podsumowaniem. Pełne zwolnienie wdrożymy później.
+    if (rule.type === "coachPoints" && window.__coachMilestoneShown) return null;
 
     if (rule.type === "finalTable") {
         const finalRound = seasonGameState.widzewFixtures.length
@@ -2665,6 +2748,11 @@ function simulateCurrentWidzewMatch() {
     seasonGameState.simulatedMatchCount = Number(seasonGameState.simulatedMatchCount || 0) + 1;
     updateTopScorersFromMatch(match);
 
+    if (checkCoachMilestone()) {
+        renderPlayableSeason();
+        return;
+    }
+
     if (checkCoachDismissal()) {
         renderPlayableSeason();
         return;
@@ -2808,6 +2896,7 @@ async function initSeasonMode(mode) {
     seasonGameState.generatedResults={};
     window.__playerScorePending = false;
     window.__coachDismissed = false;
+    window.__coachMilestoneShown = false;
     seasonGameState.widzewFixtures=[];
     const loading=document.getElementById("seasonLoading");
     const content=document.getElementById("seasonBoardContent");
