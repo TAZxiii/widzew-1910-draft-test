@@ -2001,8 +2001,28 @@ function facePathForCandidate(card) {
 function openSeasonScreen(season) {
     const seasonValue = season || ((draft.mode === "player" || draft.mode === "gracz") ? "22/23" : draft.gameSeason || "");
     window.__seasonValue = seasonValue;
+
     const intro = document.getElementById("seasonChoiceIntro");
     if (intro) intro.textContent = `Sezon ${seasonValue} · wybierz sposób rozegrania rozgrywek.`;
+
+    // W trybie TRENER oba warianty sezonu mają dodatkowe wyjaśnienie
+    // dotyczące pełnego scenariusza. Tryb GRACZ pozostaje bez zmian.
+    const playDescription = document.querySelector("#playWholeSeason span");
+    const simulateDescription = document.querySelector("#simulateWholeSeason span");
+    const isCoachMode = window.__widzewGameMode === "coach";
+
+    if (playDescription) {
+        playDescription.textContent = isCoachMode
+            ? "Rozegraj pełny tryb scenariusza. Samodzielnie rozgrywaj mecze Widzewa i podejmuj decyzje podczas spotkań"
+            : "Samodzielnie rozgrywaj kolejne mecze Widzewa i podejmuj decyzje podczas spotkań.";
+    }
+
+    if (simulateDescription) {
+        simulateDescription.textContent = isCoachMode
+            ? "Tryb całkowicie bez trybu scenariusza, Automatycznie zasymuluj wszystkie mecze Widzewa i przejdź od razu do końcowej tabeli."
+            : "Automatycznie zasymuluj wszystkie mecze Widzewa i przejdź od razu do końcowej tabeli.";
+    }
+
     if (window.__showScreen) window.__showScreen(document.getElementById("seasonChoiceScreen"));
 }
 
