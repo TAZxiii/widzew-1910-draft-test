@@ -2503,6 +2503,24 @@ const COACH_MILESTONE_RULES = {
     12: { triggerRound: 9,  targetMatches: 2, actual: { matches: 2, position: 12, wins: 0, draws: 2, losses: 0, goalsFor: 3, goalsAgainst: 3, points: 2 } }
 };
 
+// Grafiki kończące karierę trenera po kliknięciu „ZAKOŃCZ GRĘ".
+// Docelowe pliki dla poszczególnych trenerów będziemy uzupełniać osobno.
+// Na razie korzystamy z istniejących grafik zwolnienia jako bezpiecznego fallbacku.
+const COACH_FAREWELL_IMAGES = {
+    1: "data/wtm/out/1.PNG",
+    2: "data/wtm/out/1.PNG",
+    3: "data/wtm/out/2.PNG",
+    4: "data/wtm/out/2.PNG",
+    5: "data/wtm/out/3.PNG",
+    6: "data/wtm/out/4.PNG",
+    7: "data/wtm/out/4.PNG",
+    8: "data/wtm/out/5.PNG",
+    9: "data/wtm/out/7.PNG",
+    10: "data/wtm/out/10.PNG",
+    11: "data/wtm/out/10.PNG",
+    12: null
+};
+
 // Warunki decyzji zarządu po podsumowaniu kadencji.
 const COACH_DECISION_RULES = {
     1: [
@@ -2738,6 +2756,79 @@ function getCoachDecisionStatus(status) {
     return decision ? { ...decisionStatus, decision } : null;
 }
 
+function showCoachFarewell() {
+    const activeTrainer = window.__widzewSelectedTrainer;
+    if (!activeTrainer) return false;
+
+    const coachId = Number(activeTrainer.faceId);
+    const imagePath = COACH_FAREWELL_IMAGES[coachId];
+    let overlay = document.getElementById("coachFarewellOverlay");
+
+    if (overlay) overlay.remove();
+
+    overlay = document.createElement("div");
+    overlay.id = "coachFarewellOverlay";
+    overlay.style.cssText =
+        "position:fixed;inset:0;z-index:1000005;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;";
+
+    if (imagePath) {
+        const image = document.createElement("img");
+        image.src = imagePath;
+        image.alt = "Podziękowanie dla trenera";
+        image.style.cssText =
+            "width:100%;height:100%;object-fit:contain;display:block;user-select:none;-webkit-user-drag:none;";
+        overlay.appendChild(image);
+    } else {
+        const fallback = document.createElement("div");
+        fallback.style.cssText =
+            "width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;font-family:Arial,Helvetica,sans-serif;font-size:clamp(42px,8vw,110px);font-weight:900;background:#a90000;";
+        fallback.textContent = "DZIĘKUJEMY!";
+        overlay.appendChild(fallback);
+    }
+
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.id = "coachFarewellClose";
+    closeButton.setAttribute("aria-label", "Powrót do menu głównego");
+    closeButton.title = "Powrót do menu głównego";
+    closeButton.textContent = "×";
+    closeButton.style.cssText =
+        "position:absolute;top:18px;right:22px;width:48px;height:48px;border:0;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:42px;line-height:42px;font-weight:300;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .2s ease,background .2s ease;z-index:2;";
+    closeButton.addEventListener("mouseenter", () => {
+        closeButton.style.background = "rgba(0,0,0,.8)";
+    });
+    closeButton.addEventListener("mouseleave", () => {
+        closeButton.style.background = "rgba(0,0,0,.55)";
+    });
+
+    const returnToMainMenu = () => {
+        clearTimeout(showCloseTimer);
+        overlay.remove();
+        window.__coachDismissed = false;
+        window.__coachDecisionShown = false;
+        window.__coachMilestoneShown = false;
+        window.__widzewGameMode = null;
+        window.__widzewSelectedTrainer = null;
+        window.__widzewTrainerStartRound = null;
+        window.__widzewCoachStrength = 0;
+        if (typeof window.__showScreen === "function") {
+            window.__showScreen(document.querySelector(".start-screen"));
+        }
+    };
+
+    closeButton.addEventListener("click", returnToMainMenu);
+    overlay.appendChild(closeButton);
+    document.body.appendChild(overlay);
+
+    const showCloseTimer = setTimeout(() => {
+        closeButton.style.opacity = "1";
+        closeButton.style.pointerEvents = "auto";
+    }, 5000);
+
+    window.__coachDismissed = true;
+    return true;
+}
+
 function showCoachDecision(status) {
     const activeTrainer = window.__widzewSelectedTrainer;
     if (!activeTrainer || !status || window.__coachDecisionShown) return false;
@@ -2774,11 +2865,15 @@ function showCoachDecision(status) {
 
     if (canContinue) {
         modal.querySelector("#coachDecisionContinue")?.addEventListener("click", () => modal.remove());
+        modal.querySelector("#coachDecisionEnd")?.addEventListener("click", () => {
+            modal.remove();
+            showCoachFarewell();
+        });
     } else {
         window.__coachDismissed = true;
         modal.querySelector("#coachDecisionEnd")?.addEventListener("click", () => {
             modal.remove();
-            window.__widzewGameMode = null;
+            showCoachFarewell();
         });
     }
 
