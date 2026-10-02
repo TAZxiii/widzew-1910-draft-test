@@ -2012,14 +2012,14 @@ function openSeasonScreen(season) {
     const isCoachMode = window.__widzewGameMode === "coach";
 
     if (playDescription) {
-        playDescription.textContent = isCoachMode
-            ? "Rozegraj pełny tryb scenariusza. Samodzielnie rozgrywaj mecze Widzewa i podejmuj decyzje podczas spotkań"
+        playDescription.innerHTML = isCoachMode
+            ? "<strong>Rozegraj pełny tryb scenariusza.</strong> Samodzielnie rozgrywaj mecze Widzewa i podejmuj decyzje podczas spotkań"
             : "Samodzielnie rozgrywaj kolejne mecze Widzewa i podejmuj decyzje podczas spotkań.";
     }
 
     if (simulateDescription) {
-        simulateDescription.textContent = isCoachMode
-            ? "Tryb całkowicie bez trybu scenariusza, Automatycznie zasymuluj wszystkie mecze Widzewa i przejdź od razu do końcowej tabeli."
+        simulateDescription.innerHTML = isCoachMode
+            ? "<strong>Tryb całkowicie bez trybu scenariusza.</strong> Automatycznie zasymuluj wszystkie mecze Widzewa i przejdź od razu do końcowej tabeli."
             : "Automatycznie zasymuluj wszystkie mecze Widzewa i przejdź od razu do końcowej tabeli.";
     }
 
