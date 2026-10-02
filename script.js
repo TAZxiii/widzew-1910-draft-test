@@ -2518,7 +2518,7 @@ const COACH_FAREWELL_IMAGES = {
     9: "data/wtm/out/7.PNG",
     10: "data/wtm/out/10.PNG",
     11: "data/wtm/out/10.PNG",
-    12: null
+    12: "data/wtm/out/else.png"
 };
 
 // Warunki decyzji zarządu po podsumowaniu kadencji.
