@@ -2804,16 +2804,10 @@ function showCoachFarewell() {
     const returnToMainMenu = () => {
         clearTimeout(showCloseTimer);
         overlay.remove();
-        window.__coachDismissed = false;
-        window.__coachDecisionShown = false;
-        window.__coachMilestoneShown = false;
-        window.__widzewGameMode = null;
-        window.__widzewSelectedTrainer = null;
-        window.__widzewTrainerStartRound = null;
-        window.__widzewCoachStrength = 0;
-        if (typeof window.__showScreen === "function") {
-            window.__showScreen(document.querySelector(".start-screen"));
-        }
+
+        // Pełny reset gry: zachowujemy ustawienia zapisane w localStorage,
+        // ale cała sesja gry i wszystkie zmienne JS zostają wyzerowane.
+        window.location.reload();
     };
 
     closeButton.addEventListener("click", returnToMainMenu);
