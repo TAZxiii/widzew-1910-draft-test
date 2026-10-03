@@ -1134,13 +1134,15 @@ function formatSquadValue(value) {
 
     closeSopicEasterEgg?.addEventListener("click", closeSopicVideo);
 
+    document.getElementById("closeSopicUnderstand")?.addEventListener("click", finishSopicUnderstand);
+
     document.getElementById("sopicUnderstandYes")?.addEventListener("click", () => {
         if (sopicUnderstandQuestion === 1) {
             // Pierwsze TAK — dokładnie ustalony komunikat, a następnie wybór trudności.
             sopicUnderstandTitle.textContent = "BRAWO! Ty już understand!";
             sopicUnderstandParagraphs[0].innerHTML = "Zaklęcie zadziałało! Maszyna Sopicia ruszyła! Bonus: +1 do ogólnej siły drużyny na 3 najbliższe mecze Widzewa.";
             sopicUnderstandParagraphs[1].innerHTML = "";
-            setTimeout(finishSopicUnderstand, 1400);
+            document.querySelector(".sopic-understand-actions")?.classList.add("hidden");
             return;
         }
 
@@ -1149,7 +1151,7 @@ function formatSquadValue(value) {
             sopicUnderstandTitle.textContent = "BRAWO! W końcu zaczynasz understand!";
             sopicUnderstandParagraphs[0].innerHTML = "Wiedziałem, że w końcu zrozumiesz! Maszyna Sopicia ruszyła! Bonus: +2 do ogólnej siły drużyny na 3 najbliższe mecze Widzewa.";
             sopicUnderstandParagraphs[1].innerHTML = "";
-            setTimeout(finishSopicUnderstand, 1400);
+            document.querySelector(".sopic-understand-actions")?.classList.add("hidden");
             return;
         }
 
@@ -1157,7 +1159,7 @@ function formatSquadValue(value) {
         sopicUnderstandTitle.textContent = "BRAWO! Przestałeś się zgrywać. Ty już understand!";
         sopicUnderstandParagraphs[0].innerHTML = "Željko może być z Ciebie dumny! Bonus: +3 do ogólnej siły drużyny na 3 najbliższe mecze Widzewa.";
         sopicUnderstandParagraphs[1].innerHTML = "";
-        setTimeout(finishSopicUnderstand, 1400);
+        document.querySelector(".sopic-understand-actions")?.classList.add("hidden");
     });
 
     document.getElementById("sopicUnderstandNo")?.addEventListener("click", () => {
@@ -1237,6 +1239,11 @@ function formatSquadValue(value) {
             width: min(650px, calc(100vw - 30px));
             text-align: center;
             padding: 30px;
+        }
+        #sopicUnderstandModal .close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
         }
         .sopic-understand-actions {
             display: flex;
