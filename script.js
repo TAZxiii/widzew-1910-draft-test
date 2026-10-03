@@ -1091,6 +1091,14 @@ function formatSquadValue(value) {
         }
     };
 
+    const activateSopicBonus = value => {
+        if (!isSopicTrainer()) return;
+        window.__sopicBonus = {
+            value: Number(value) || 0,
+            remainingMatches: 3
+        };
+    };
+
     const finishSopicUnderstand = () => {
         sopicUnderstandModal?.classList.add("hidden");
         disarmSopicEasterEgg();
@@ -1143,6 +1151,7 @@ function formatSquadValue(value) {
             sopicUnderstandParagraphs[0].innerHTML = "Zaklęcie zadziałało! Maszyna Sopicia ruszyła! Bonus: +1 do ogólnej siły drużyny na 3 najbliższe mecze Widzewa.";
             sopicUnderstandParagraphs[1].innerHTML = "";
             document.querySelector(".sopic-understand-actions")?.classList.add("hidden");
+            activateSopicBonus(1);
             return;
         }
 
@@ -1152,6 +1161,7 @@ function formatSquadValue(value) {
             sopicUnderstandParagraphs[0].innerHTML = "Wiedziałem, że w końcu zrozumiesz! Maszyna Sopicia ruszyła! Bonus: +2 do ogólnej siły drużyny na 3 najbliższe mecze Widzewa.";
             sopicUnderstandParagraphs[1].innerHTML = "";
             document.querySelector(".sopic-understand-actions")?.classList.add("hidden");
+            activateSopicBonus(2);
             return;
         }
 
@@ -1160,6 +1170,7 @@ function formatSquadValue(value) {
         sopicUnderstandParagraphs[0].innerHTML = "Željko może być z Ciebie dumny! Bonus: +3 do ogólnej siły drużyny na 3 najbliższe mecze Widzewa.";
         sopicUnderstandParagraphs[1].innerHTML = "";
         document.querySelector(".sopic-understand-actions")?.classList.add("hidden");
+        activateSopicBonus(3);
     });
 
     document.getElementById("sopicUnderstandNo")?.addEventListener("click", () => {
@@ -2360,6 +2371,22 @@ function seasonOtherResult(fixture) {
     const generated = getNonWidzewResult(fixture);
     return Array.isArray(generated) ? String(generated[0]) + ":" + String(generated[1]) : "—";
 }
+function getSopicBonusOverall() {
+    const bonus = window.__sopicBonus;
+    if (!bonus || Number(bonus.remainingMatches) <= 0 || Number(bonus.value) <= 0) return 0;
+    return Number(bonus.value);
+}
+
+function consumeSopicBonusMatch() {
+    const bonus = window.__sopicBonus;
+    if (!bonus || Number(bonus.remainingMatches) <= 0) return;
+
+    bonus.remainingMatches = Number(bonus.remainingMatches) - 1;
+    if (bonus.remainingMatches <= 0) {
+        window.__sopicBonus = null;
+    }
+}
+
 function generateProvisionalWidzewResult(opponent, home) {
     // Zawsze zwracamy [gole Widzewa, gole przeciwnika].
     // Widzew musi mieć normalną, niezależną od trybu gry szansę na zdobywanie bramek.
@@ -2368,7 +2395,8 @@ function generateProvisionalWidzewResult(opponent, home) {
     );
     const opp = opponentRow ? seasonNum(opponentRow["Ogólna"]) : 65;
     const raw = Number(window.__widzewSeasonOverall);
-    const widzew = Number.isFinite(raw) && raw > 0 ? raw : 65;
+    const baseWidzew = Number.isFinite(raw) && raw > 0 ? raw : 65;
+    const widzew = baseWidzew + getSopicBonusOverall();
     const diff = Math.max(-20, Math.min(20, widzew - opp));
 
     let pGoal = 0.58 + diff * 0.008 + (home ? 0.04 : -0.03);
@@ -3294,6 +3322,7 @@ function simulateCurrentWidzewMatch() {
     const gf=home?score[0]:score[1], ga=home?score[1]:score[0];
     const match={round:seasonGameState.currentRound, opponent, home, gf, ga, scorers:makeMatchScorers(gf,ga)};
     seasonGameState.widzewResults.push(match);
+    consumeSopicBonusMatch();
     seasonGameState.simulatedMatchCount = Number(seasonGameState.simulatedMatchCount || 0) + 1;
     updateTopScorersFromMatch(match);
 
@@ -3320,7 +3349,7 @@ function simulateWholeSeason() {
         const score = generateProvisionalWidzewResult(opponent, home);
         const gf = Number(home ? score[0] : score[1]);
         const ga = Number(home ? score[1] : score[0]);
-        const match = { round, opponent, home, gf, ga, scorers: [] };
+        const match = { round, opponent, home, gf, ga, scorers: [], sopicBonus: getSopicBonusOverall() };
 
         // Losowanie strzelców nie może zatrzymać całej symulacji.
         try {
@@ -3359,6 +3388,7 @@ function simulateWholeSeason() {
             // się udało. Nigdy nie kasuj całego meczu przez błąd klasyfikacji.
         }
         seasonGameState.widzewResults.push(match);
+        consumeSopicBonusMatch();
     });
 
     // 34 losowania z bardzo małym prawdopodobieństwem dają 0 goli Widzewa.
