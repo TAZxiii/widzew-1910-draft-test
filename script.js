@@ -1022,14 +1022,44 @@ function formatSquadValue(value) {
     const sopicEasterEggVideo = document.getElementById("sopicEasterEggVideo");
     const closeSopicEasterEgg = document.getElementById("closeSopicEasterEgg");
     const sopicUnderstandModal = document.getElementById("sopicUnderstandModal");
+    const sopicUnderstandTitle = sopicUnderstandModal?.querySelector("h2");
+    const sopicUnderstandParagraphs = sopicUnderstandModal?.querySelectorAll("p");
     let sopicCodeBuffer = "";
     let sopicCodeListener = null;
     let sopicCodeReady = false;
     let sopicEggTriggered = false;
+    let sopicUnderstandQuestion = 1;
 
     const isSopicTrainer = () => {
         const trainerId = Number(window.__widzewSelectedTrainer?.faceId);
         return trainerId === 6 || trainerId === 7;
+    };
+
+    const setSopicUnderstandQuestion = question => {
+        sopicUnderstandQuestion = question;
+
+        if (sopicUnderstandTitle) {
+            if (question === 1) {
+                sopicUnderstandTitle.textContent = "Brawo, odkryłeś nową znajdźkę! 🎉";
+            } else if (question === 2) {
+                sopicUnderstandTitle.textContent = "Rzucono na Ciebie znowu zaklęcie „You must understand”. 🪄";
+            } else {
+                sopicUnderstandTitle.textContent = "Przestań się zgrywać i w końcu understand! 😐";
+            }
+        }
+
+        if (sopicUnderstandParagraphs?.length >= 2) {
+            if (question === 1) {
+                sopicUnderstandParagraphs[0].innerHTML = "Rzucono na Ciebie zaklęcie <strong>„You must understand”</strong>.";
+                sopicUnderstandParagraphs[1].innerHTML = "<strong>Czy Ty już understand?</strong>";
+            } else if (question === 2) {
+                sopicUnderstandParagraphs[0].innerHTML = "";
+                sopicUnderstandParagraphs[1].innerHTML = "<strong>Czy Ty już understand?</strong>";
+            } else {
+                sopicUnderstandParagraphs[0].innerHTML = "";
+                sopicUnderstandParagraphs[1].innerHTML = "<strong>Czy Ty już understand?</strong>";
+            }
+        }
     };
 
     const triggerSopicEasterEgg = () => {
@@ -1048,13 +1078,34 @@ function formatSquadValue(value) {
             sopicEasterEggVideo.currentTime = 0;
         }
         sopicEasterEggModal?.classList.add("hidden");
+        setSopicUnderstandQuestion(sopicUnderstandQuestion);
         sopicUnderstandModal?.classList.remove("hidden");
+    };
+
+    const playSopicVideoAgain = () => {
+        sopicUnderstandModal?.classList.add("hidden");
+        sopicEasterEggModal?.classList.remove("hidden");
+        if (sopicEasterEggVideo) {
+            sopicEasterEggVideo.currentTime = 0;
+            sopicEasterEggVideo.play().catch(() => {});
+        }
+    };
+
+    const finishSopicUnderstand = () => {
+        sopicUnderstandModal?.classList.add("hidden");
+        disarmSopicEasterEgg();
+        const selectedTrainer = window.__widzewSelectedTrainer;
+        showDifficultyScreen(
+            `Wybrany trener: <strong>${selectedTrainer.first} ${selectedTrainer.last}</strong><br>
+             Sezon: ${selectedTrainer.season} · Formacja: ${selectedTrainer.formation}`
+        );
     };
 
     const armSopicEasterEgg = () => {
         sopicCodeBuffer = "";
         sopicCodeReady = false;
         sopicEggTriggered = false;
+        sopicUnderstandQuestion = 1;
         sopicCodeListener?.();
 
         const onKeyDown = event => {
@@ -1084,11 +1135,47 @@ function formatSquadValue(value) {
     closeSopicEasterEgg?.addEventListener("click", closeSopicVideo);
 
     document.getElementById("sopicUnderstandYes")?.addEventListener("click", () => {
-        sopicUnderstandModal?.classList.add("hidden");
+        if (sopicUnderstandQuestion === 1) {
+            // Pierwsze TAK — dokładnie ustalony komunikat, a następnie wybór trudności.
+            sopicUnderstandTitle.textContent = "BRAWO! Ty już understand! 🎉";
+            sopicUnderstandParagraphs[0].innerHTML = "Zaklęcie zadziałało! Maszyna Sopicia ruszyła!";
+            sopicUnderstandParagraphs[1].innerHTML = "";
+            setTimeout(finishSopicUnderstand, 1400);
+            return;
+        }
+
+        if (sopicUnderstandQuestion === 2) {
+            // Drugie TAK — ustalony komunikat. Bonus +2 zostanie podpięty do silnika później.
+            sopicUnderstandTitle.textContent = "BRAWO! W końcu zaczynasz understand! 🎉";
+            sopicUnderstandParagraphs[0].innerHTML = "Wiedziałem, że w końcu zrozumiesz! Maszyna Sopicia ruszyła!";
+            sopicUnderstandParagraphs[1].innerHTML = "";
+            setTimeout(finishSopicUnderstand, 1400);
+            return;
+        }
+
+        // Trzecie TAK — ustalony komunikat. Bonus +3 zostanie podpięty do silnika później.
+        sopicUnderstandTitle.textContent = "BRAWO! Przestałeś się zgrywać. Ty już understand! 🎉";
+        sopicUnderstandParagraphs[0].innerHTML = "Željko może być z Ciebie dumny!";
+        sopicUnderstandParagraphs[1].innerHTML = "";
+        setTimeout(finishSopicUnderstand, 1400);
     });
 
     document.getElementById("sopicUnderstandNo")?.addEventListener("click", () => {
-        sopicUnderstandModal?.classList.add("hidden");
+        if (sopicUnderstandQuestion === 1) {
+            sopicUnderstandQuestion = 2;
+            playSopicVideoAgain();
+            return;
+        }
+
+        if (sopicUnderstandQuestion === 2) {
+            sopicUnderstandTitle.textContent = "TY NADAL NIE UNDERSTAND?! 😡";
+            sopicUnderstandParagraphs[0].innerHTML = "<strong>Koniec tego.</strong>";
+            sopicUnderstandParagraphs[1].innerHTML = "";
+            setTimeout(() => {
+                sopicUnderstandModal?.classList.add("hidden");
+                window.location.reload();
+            }, 1400);
+        }
     });
 
     function showTrainerWelcome() {
