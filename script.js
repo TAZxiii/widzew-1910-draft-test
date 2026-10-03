@@ -1168,10 +1168,9 @@ function formatSquadValue(value) {
         }
 
         if (sopicUnderstandQuestion === 2) {
+            // Drugie NIE — ponownie odtwarzamy film, a dopiero po nim pokazujemy pytanie nr 3.
             sopicUnderstandQuestion = 3;
-            sopicUnderstandTitle.textContent = "Przestań się zgrywać i w końcu understand! 😐";
-            sopicUnderstandParagraphs[0].innerHTML = "";
-            sopicUnderstandParagraphs[1].innerHTML = "<strong>Czy Ty już understand?</strong>";
+            playSopicVideoAgain();
             return;
         }
 
