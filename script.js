@@ -1017,32 +1017,48 @@ function formatSquadValue(value) {
     const wtmWelcomeClose = document.getElementById("wtmWelcomeClose");
     let wtmWelcomeTimer = null;
 
-    // EASTER EGG SOPIĆ — na tym etapie tylko wykrywanie kodu i otwarcie filmu.
-    // Kod działa wyłącznie na ekranie grafiki WTM i tylko dla Željko Sopicia (ID 6 lub 7).
+    // EASTER EGG SOPIĆ — kod jest wpisywany na grafice WTM, ale film pojawia się dopiero po X.
     const sopicEasterEggModal = document.getElementById("sopicEasterEggModal");
     const sopicEasterEggVideo = document.getElementById("sopicEasterEggVideo");
     const closeSopicEasterEgg = document.getElementById("closeSopicEasterEgg");
+    const sopicUnderstandModal = document.getElementById("sopicUnderstandModal");
     let sopicCodeBuffer = "";
     let sopicCodeListener = null;
+    let sopicCodeReady = false;
+    let sopicEggTriggered = false;
 
     const isSopicTrainer = () => {
         const trainerId = Number(window.__widzewSelectedTrainer?.faceId);
         return trainerId === 6 || trainerId === 7;
     };
 
-    const closeSopicEasterEggModal = () => {
+    const triggerSopicEasterEgg = () => {
+        if (sopicEggTriggered || !isSopicTrainer()) return;
+        sopicEggTriggered = true;
+        sopicEasterEggModal?.classList.remove("hidden");
+        if (sopicEasterEggVideo) {
+            sopicEasterEggVideo.currentTime = 0;
+            sopicEasterEggVideo.play().catch(() => {});
+        }
+    };
+
+    const closeSopicVideo = () => {
         if (sopicEasterEggVideo) {
             sopicEasterEggVideo.pause();
             sopicEasterEggVideo.currentTime = 0;
         }
         sopicEasterEggModal?.classList.add("hidden");
+        sopicUnderstandModal?.classList.remove("hidden");
     };
 
     const armSopicEasterEgg = () => {
         sopicCodeBuffer = "";
+        sopicCodeReady = false;
+        sopicEggTriggered = false;
         sopicCodeListener?.();
+
         const onKeyDown = event => {
-            if (!isSopicTrainer()) return;
+            if (!isSopicTrainer() || sopicEggTriggered) return;
             if (event.ctrlKey || event.altKey || event.metaKey) return;
             if (!/^[a-zA-Z]$/.test(event.key)) return;
 
@@ -1050,12 +1066,7 @@ function formatSquadValue(value) {
 
             if (sopicCodeBuffer === "sopic") {
                 sopicCodeBuffer = "";
-                sopicEasterEggModal?.classList.remove("hidden");
-
-                if (sopicEasterEggVideo) {
-                    sopicEasterEggVideo.currentTime = 0;
-                    sopicEasterEggVideo.play().catch(() => {});
-                }
+                sopicCodeReady = true;
             }
         };
 
@@ -1065,13 +1076,19 @@ function formatSquadValue(value) {
 
     const disarmSopicEasterEgg = () => {
         sopicCodeBuffer = "";
+        sopicCodeReady = false;
         sopicCodeListener?.();
         sopicCodeListener = null;
     };
 
-    closeSopicEasterEgg?.addEventListener("click", closeSopicEasterEggModal);
-    sopicEasterEggModal?.addEventListener("click", event => {
-        if (event.target === sopicEasterEggModal) closeSopicEasterEggModal();
+    closeSopicEasterEgg?.addEventListener("click", closeSopicVideo);
+
+    document.getElementById("sopicUnderstandYes")?.addEventListener("click", () => {
+        sopicUnderstandModal?.classList.add("hidden");
+    });
+
+    document.getElementById("sopicUnderstandNo")?.addEventListener("click", () => {
+        sopicUnderstandModal?.classList.add("hidden");
     });
 
     function showTrainerWelcome() {
@@ -1091,8 +1108,17 @@ function formatSquadValue(value) {
 
     wtmWelcomeClose.addEventListener("click", () => {
         clearTimeout(wtmWelcomeTimer);
-        disarmSopicEasterEgg();
+        const openSopicEgg = isSopicTrainer() && sopicCodeReady;
+
         wtmWelcomeModal.classList.add("hidden");
+
+        if (openSopicEgg) {
+            disarmSopicEasterEgg();
+            triggerSopicEasterEgg();
+            return;
+        }
+
+        disarmSopicEasterEgg();
         showDifficultyScreen(
             `Wybrany trener: <strong>${selectedTrainer.first} ${selectedTrainer.last}</strong><br>
              Sezon: ${selectedTrainer.season} · Formacja: ${selectedTrainer.formation}`
@@ -1111,6 +1137,17 @@ function formatSquadValue(value) {
             margin-top: 14px;
             border-radius: 10px;
             background: #000;
+        }
+        #sopicUnderstandModal .sopic-understand-card {
+            width: min(650px, calc(100vw - 30px));
+            text-align: center;
+            padding: 30px;
+        }
+        .sopic-understand-actions {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 24px;
         }
     `;
     document.head.appendChild(sopicEasterEggStyle);
