@@ -1042,7 +1042,7 @@ function formatSquadValue(value) {
             if (question === 1) {
                 sopicUnderstandTitle.textContent = "Brawo, odkryłeś nową znajdźkę! 🎉";
             } else if (question === 2) {
-                sopicUnderstandTitle.textContent = "Rzucono na Ciebie znowu zaklęcie „You must understand”. 🪄";
+                sopicUnderstandTitle.textContent = "Rzucono na Ciebie znowu zaklęcie „You must understand”.";
             } else {
                 sopicUnderstandTitle.textContent = "Przestań się zgrywać i w końcu understand! 😐";
             }
@@ -1137,8 +1137,8 @@ function formatSquadValue(value) {
     document.getElementById("sopicUnderstandYes")?.addEventListener("click", () => {
         if (sopicUnderstandQuestion === 1) {
             // Pierwsze TAK — dokładnie ustalony komunikat, a następnie wybór trudności.
-            sopicUnderstandTitle.textContent = "BRAWO! Ty już understand! 🎉";
-            sopicUnderstandParagraphs[0].innerHTML = "Zaklęcie zadziałało! Maszyna Sopicia ruszyła!";
+            sopicUnderstandTitle.textContent = "BRAWO! Ty już understand!";
+            sopicUnderstandParagraphs[0].innerHTML = "Zaklęcie zadziałało! Maszyna Sopicia ruszyła! Bonus: +1 do ogólnej siły drużyny na 3 najbliższe mecze Widzewa.";
             sopicUnderstandParagraphs[1].innerHTML = "";
             setTimeout(finishSopicUnderstand, 1400);
             return;
@@ -1146,16 +1146,16 @@ function formatSquadValue(value) {
 
         if (sopicUnderstandQuestion === 2) {
             // Drugie TAK — ustalony komunikat. Bonus +2 zostanie podpięty do silnika później.
-            sopicUnderstandTitle.textContent = "BRAWO! W końcu zaczynasz understand! 🎉";
-            sopicUnderstandParagraphs[0].innerHTML = "Wiedziałem, że w końcu zrozumiesz! Maszyna Sopicia ruszyła!";
+            sopicUnderstandTitle.textContent = "BRAWO! W końcu zaczynasz understand!";
+            sopicUnderstandParagraphs[0].innerHTML = "Wiedziałem, że w końcu zrozumiesz! Maszyna Sopicia ruszyła! Bonus: +2 do ogólnej siły drużyny na 3 najbliższe mecze Widzewa.";
             sopicUnderstandParagraphs[1].innerHTML = "";
             setTimeout(finishSopicUnderstand, 1400);
             return;
         }
 
         // Trzecie TAK — ustalony komunikat. Bonus +3 zostanie podpięty do silnika później.
-        sopicUnderstandTitle.textContent = "BRAWO! Przestałeś się zgrywać. Ty już understand! 🎉";
-        sopicUnderstandParagraphs[0].innerHTML = "Željko może być z Ciebie dumny!";
+        sopicUnderstandTitle.textContent = "BRAWO! Przestałeś się zgrywać. Ty już understand!";
+        sopicUnderstandParagraphs[0].innerHTML = "Željko może być z Ciebie dumny! Bonus: +3 do ogólnej siły drużyny na 3 najbliższe mecze Widzewa.";
         sopicUnderstandParagraphs[1].innerHTML = "";
         setTimeout(finishSopicUnderstand, 1400);
     });
