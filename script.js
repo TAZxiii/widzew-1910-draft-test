@@ -1175,6 +1175,8 @@ function formatSquadValue(value) {
         }
 
         // Trzecie NIE — koniec zabawy i powrót do menu.
+        // Ukrywamy przyciski TAK/NIE od razu, żeby po komunikacie nie były już widoczne.
+        document.querySelector(".sopic-understand-actions")?.classList.add("hidden");
         sopicUnderstandTitle.textContent = "TY NADAL NIE UNDERSTAND?! 😡";
         sopicUnderstandParagraphs[0].innerHTML = "<strong>Koniec tego.</strong>";
         sopicUnderstandParagraphs[1].innerHTML = "";
