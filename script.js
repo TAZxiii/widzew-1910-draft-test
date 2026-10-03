@@ -1168,14 +1168,21 @@ function formatSquadValue(value) {
         }
 
         if (sopicUnderstandQuestion === 2) {
-            sopicUnderstandTitle.textContent = "TY NADAL NIE UNDERSTAND?! 😡";
-            sopicUnderstandParagraphs[0].innerHTML = "<strong>Koniec tego.</strong>";
-            sopicUnderstandParagraphs[1].innerHTML = "";
-            setTimeout(() => {
-                sopicUnderstandModal?.classList.add("hidden");
-                window.location.reload();
-            }, 1400);
+            sopicUnderstandQuestion = 3;
+            sopicUnderstandTitle.textContent = "Przestań się zgrywać i w końcu understand! 😐";
+            sopicUnderstandParagraphs[0].innerHTML = "";
+            sopicUnderstandParagraphs[1].innerHTML = "<strong>Czy Ty już understand?</strong>";
+            return;
         }
+
+        // Trzecie NIE — koniec zabawy i powrót do menu.
+        sopicUnderstandTitle.textContent = "TY NADAL NIE UNDERSTAND?! 😡";
+        sopicUnderstandParagraphs[0].innerHTML = "<strong>Koniec tego.</strong>";
+        sopicUnderstandParagraphs[1].innerHTML = "";
+        setTimeout(() => {
+            sopicUnderstandModal?.classList.add("hidden");
+            window.location.reload();
+        }, 1400);
     });
 
     function showTrainerWelcome() {
