@@ -1017,10 +1017,71 @@ function formatSquadValue(value) {
     const wtmWelcomeClose = document.getElementById("wtmWelcomeClose");
     let wtmWelcomeTimer = null;
 
+    // EASTER EGG SOPIĆ — na tym etapie tylko wykrywanie kodu i otwarcie filmu.
+    // Kod działa wyłącznie na ekranie grafiki WTM i tylko dla Željko Sopicia (ID 6 lub 7).
+    const sopicEasterEggModal = document.getElementById("sopicEasterEggModal");
+    const sopicEasterEggVideo = document.getElementById("sopicEasterEggVideo");
+    const closeSopicEasterEgg = document.getElementById("closeSopicEasterEgg");
+    let sopicCodeBuffer = "";
+    let sopicCodeListener = null;
+
+    const isSopicTrainer = () => {
+        const trainerId = Number(window.__widzewSelectedTrainer?.faceId);
+        return trainerId === 6 || trainerId === 7;
+    };
+
+    const closeSopicEasterEggModal = () => {
+        if (sopicEasterEggVideo) {
+            sopicEasterEggVideo.pause();
+            sopicEasterEggVideo.currentTime = 0;
+        }
+        sopicEasterEggModal?.classList.add("hidden");
+    };
+
+    const armSopicEasterEgg = () => {
+        sopicCodeBuffer = "";
+        sopicCodeListener?.();
+        const onKeyDown = event => {
+            if (!isSopicTrainer()) return;
+            if (event.ctrlKey || event.altKey || event.metaKey) return;
+            if (!/^[a-zA-Z]$/.test(event.key)) return;
+
+            sopicCodeBuffer = (sopicCodeBuffer + event.key.toLowerCase()).slice(-5);
+
+            if (sopicCodeBuffer === "sopic") {
+                sopicCodeBuffer = "";
+                sopicEasterEggModal?.classList.remove("hidden");
+
+                if (sopicEasterEggVideo) {
+                    sopicEasterEggVideo.currentTime = 0;
+                    sopicEasterEggVideo.play().catch(() => {});
+                }
+            }
+        };
+
+        document.addEventListener("keydown", onKeyDown);
+        sopicCodeListener = () => document.removeEventListener("keydown", onKeyDown);
+    };
+
+    const disarmSopicEasterEgg = () => {
+        sopicCodeBuffer = "";
+        sopicCodeListener?.();
+        sopicCodeListener = null;
+    };
+
+    closeSopicEasterEgg?.addEventListener("click", closeSopicEasterEggModal);
+    sopicEasterEggModal?.addEventListener("click", event => {
+        if (event.target === sopicEasterEggModal) closeSopicEasterEggModal();
+    });
+
     function showTrainerWelcome() {
         wtmWelcomeImage.src = `data/wtm/in/${encodeURIComponent(selectedTrainer.faceId)}.PNG?v=2`;
         wtmWelcomeClose.classList.add("hidden");
         wtmWelcomeModal.classList.remove("hidden");
+
+        // Uzbrajamy ukryty kod dokładnie w momencie pokazania grafiki WTM.
+        if (isSopicTrainer()) armSopicEasterEgg();
+        else disarmSopicEasterEgg();
 
         clearTimeout(wtmWelcomeTimer);
         wtmWelcomeTimer = setTimeout(() => {
@@ -1030,12 +1091,29 @@ function formatSquadValue(value) {
 
     wtmWelcomeClose.addEventListener("click", () => {
         clearTimeout(wtmWelcomeTimer);
+        disarmSopicEasterEgg();
         wtmWelcomeModal.classList.add("hidden");
         showDifficultyScreen(
             `Wybrany trener: <strong>${selectedTrainer.first} ${selectedTrainer.last}</strong><br>
              Sezon: ${selectedTrainer.season} · Formacja: ${selectedTrainer.formation}`
         );
     });
+
+    const sopicEasterEggStyle = document.createElement("style");
+    sopicEasterEggStyle.textContent = `
+        #sopicEasterEggModal .sopic-easter-egg-card {
+            width: min(900px, calc(100vw - 30px));
+        }
+        #sopicEasterEggVideo {
+            display: block;
+            width: 100%;
+            max-height: 70vh;
+            margin-top: 14px;
+            border-radius: 10px;
+            background: #000;
+        }
+    `;
+    document.head.appendChild(sopicEasterEggStyle);
 
     // FORMATIONS DATABASE
     async function loadFormationDatabase() {
