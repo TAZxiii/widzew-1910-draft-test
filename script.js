@@ -1901,6 +1901,53 @@ function facePathForCandidate(card) {
 
     let finalSwapIndex = null;
 
+    function syncSeasonPlayerDatabaseFromDraft() {
+        const db = window.widzewSeasonPlayerDB;
+        if (!db || !Array.isArray(db.players)) return;
+
+        db.players = draft.selected.map((p, order) => {
+            const row = p?.row || {};
+            const role = String(p?.role || "");
+            const starter = !role.startsWith("bench-");
+            const roleLabel = getSwapPosition(p);
+            return {
+                order,
+                first: row["Imię"] || "",
+                last: row["Nazwisko"] || "",
+                slot: starter ? "starter" : "bench",
+                role: roleLabel,
+                position: String(row["Pozycja"] || roleLabel || "").trim(),
+                season: row["Sezon"] || db.season || "",
+                category: p?.faceFolder || "",
+                stats: { ...row },
+                found: true
+            };
+        });
+
+        db.count = db.players.length;
+        try {
+            window.__widzewSeasonOverall = getTeamScores().overall;
+        } catch (e) {
+            console.warn("Nie udało się przeliczyć siły zespołu po zmianie składu:", e);
+        }
+    }
+
+    function openSeasonSquadEditor() {
+        if (!Array.isArray(draft.selected) || draft.selected.length !== 20) return;
+
+        window.__seasonSquadEditMode = true;
+        finalSwapIndex = null;
+        finishDraft();
+        showScreen(draftScreen);
+    }
+
+    function closeSeasonSquadEditor() {
+        window.__seasonSquadEditMode = false;
+        finalSwapIndex = null;
+        showScreen(seasonScreen);
+        renderPlayableSeason();
+    }
+
     function setupFinalSwapInteractions() {
         const grid = document.getElementById("candidateGrid");
         if (!grid) return;
@@ -1969,6 +2016,12 @@ function facePathForCandidate(card) {
                         ...starter,
                         role: bench.role
                     };
+
+                    // To nadal jest ta sama, główna tablica draft.selected.
+                    // Synchronizujemy jedynie istniejącą tymczasową bazę sezonową,
+                    // z której korzysta silnik meczu, aby następne spotkanie
+                    // od razu widziało nową jedenastkę.
+                    syncSeasonPlayerDatabaseFromDraft();
 
                     finalSwapIndex = null;
 
@@ -2174,16 +2227,28 @@ function facePathForCandidate(card) {
             </div>
         `;
         const seasonButtonLabel = finalSeason ? `ROZEGRAJ SEZON ${safe(finalSeason)}` : "ROZEGRAJ SEZON";
-        action.innerHTML = `
-            <div class="draft-finished">DRAFT ZAKOŃCZONY</div>
-            <div class="season-launch">
-                <button id="playSeasonButton" class="season-launch-button" type="button">${seasonButtonLabel}</button>
-                <p>Jeśli jesteś gotowy z wyborem swojego składu to pora podbić PKO Ekstraklasę.</p>
-            </div>`;
+        const seasonSquadEditMode = Boolean(window.__seasonSquadEditMode);
+        action.innerHTML = seasonSquadEditMode
+            ? `
+                <div class="draft-finished">EDYCJA SKŁADU SEZONOWEGO</div>
+                <div class="season-launch">
+                    <button id="closeSeasonSquadButton" class="season-launch-button" type="button">← WRÓĆ DO SEZONU</button>
+                    <p>Zmiany dotyczą tylko jedenastki i ławki rezerwowych. Twój 20-osobowy skład pozostaje bez zmian.</p>
+                </div>`
+            : `
+                <div class="draft-finished">DRAFT ZAKOŃCZONY</div>
+                <div class="season-launch">
+                    <button id="playSeasonButton" class="season-launch-button" type="button">${seasonButtonLabel}</button>
+                    <p>Jeśli jesteś gotowy z wyborem swojego składu to pora podbić PKO Ekstraklasę.</p>
+                </div>`;
 
-        document.getElementById("playSeasonButton")?.addEventListener("click", () => {
-            openSeasonScreen(finalSeason);
-        });
+        if (seasonSquadEditMode) {
+            document.getElementById("closeSeasonSquadButton")?.addEventListener("click", closeSeasonSquadEditor);
+        } else {
+            document.getElementById("playSeasonButton")?.addEventListener("click", () => {
+                openSeasonScreen(finalSeason);
+            });
+        }
         if (!window.finalSquadAlertShown) {
             window.finalSquadAlertShown = true;
             alert('W teorii powinni grać najlepsi, jednak każdy trener ma swoich ulubieńców. Możesz na tym etapie rozgrywki wymienić zawodników ze swojej jedenastki. Pamiętaj, że bycie w podstawowej jedenastce wpływa na zaangażowanie i rozwój zawodnika.');
@@ -3275,13 +3340,20 @@ function renderRound(round) {
     document.getElementById("roundMatches").innerHTML=html;
     const actions=document.getElementById("roundActions");
     const lastRound = seasonGameState.widzewFixtures.length ? Number(seasonGameState.widzewFixtures[seasonGameState.widzewFixtures.length-1].kolejka) : 34;
+    const squadButton = `<button id="seasonSquadButton" class="season-secondary-button">👥 SKŁAD</button>`;
     if(widzewPlayed) {
-        if(round < lastRound) actions.innerHTML=`<button id="nextRoundButton" class="season-main-button">NASTĘPNA KOLEJKA →</button>`;
-        else actions.innerHTML=`<button id="seasonFinishButton" class="season-main-button">ZAKOŃCZ SEZON</button>`;
+        if(round < lastRound) {
+            actions.innerHTML = squadButton + `<button id="nextRoundButton" class="season-main-button">NASTĘPNA KOLEJKA →</button>`;
+        } else {
+            actions.innerHTML = squadButton + `<button id="seasonFinishButton" class="season-main-button">ZAKOŃCZ SEZON</button>`;
+        }
     } else {
-        actions.innerHTML=`<button id="playMatchButton" class="season-main-button">ZAGRAJ MECZ</button>
+        actions.innerHTML = squadButton + `<button id="playMatchButton" class="season-main-button">ZAGRAJ MECZ</button>
                            <button id="simulateMatchButton" class="season-secondary-button">SYMULUJ MECZ</button>`;
     }
+    document.getElementById("seasonSquadButton")?.addEventListener("click", () => {
+        openSeasonSquadEditor();
+    });
     document.getElementById("playMatchButton")?.addEventListener("click",()=>{
         // Do czasu wdrożenia właściwego ekranu meczu przycisk nie może pozostawiać
         // kolejki bez wyniku — wykonujemy tę samą symulację meczu.
