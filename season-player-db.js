@@ -204,6 +204,15 @@
             .catch(error => console.error("[Widzew Draft] Nie udało się utworzyć tymczasowej bazy zawodników:", error));
     }, true);
 
+    // Pozwala głównej logice sezonu poczekać na przygotowanie bazy zawodników
+    // zanim otworzy ekran rozgrywek.
+    window.prepareWidzewSeasonPlayerDB = function (button) {
+        return buildTemporaryDatabase(button).then(db => {
+            window.widzewSeasonPlayerDB = db;
+            return db;
+        });
+    };
+
     window.getWidzewSeasonPlayerDB = function () {
         return window.widzewSeasonPlayerDB || null;
     };
