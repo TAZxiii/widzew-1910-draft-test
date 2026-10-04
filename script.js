@@ -2368,6 +2368,10 @@ function openSeasonScreen(season) {
     if (window.__showScreen) window.__showScreen(document.getElementById("seasonChoiceScreen"));
 }
 
+window.__openWidzewSeasonScreen = function(season) {
+    return openSeasonScreen(season);
+};
+
 function updateFinalSeasonLabel() {
     const root = document.getElementById("candidateGrid");
     if (!root) return;
