@@ -2276,16 +2276,19 @@ function facePathForCandidate(card) {
         if (seasonSquadEditMode) {
             document.getElementById("closeSeasonSquadButton")?.addEventListener("click", closeSeasonSquadEditor);
         } else {
-            document.getElementById("playSeasonButton")?.addEventListener("click", async (event) => {
+            document.getElementById("playSeasonButton")?.addEventListener("click", (event) => {
                 const button = event.currentTarget;
-                try {
-                    if (typeof window.prepareWidzewSeasonPlayerDB === "function") {
-                        await window.prepareWidzewSeasonPlayerDB(button);
-                    }
-                } catch (error) {
-                    console.error("[Widzew Draft] Nie udało się przygotować składu sezonowego:", error);
-                    return;
+
+                // Nie blokujemy przejścia do wyboru trybu sezonu na czas pobierania
+                // sześciu baz zawodników. Baza tymczasowa jest przygotowywana
+                // asynchronicznie, a silnik meczu poczeka na nią przed startem.
+                if (typeof window.prepareWidzewSeasonPlayerDB === "function") {
+                    window.prepareWidzewSeasonPlayerDB(button)
+                        .catch(error => {
+                            console.error("[Widzew Draft] Nie udało się przygotować składu sezonowego:", error);
+                        });
                 }
+
                 openSeasonScreen(finalSeason);
             });
         }
