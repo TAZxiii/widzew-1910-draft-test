@@ -1933,8 +1933,20 @@ function facePathForCandidate(card) {
     }
 
     function openSeasonSquadEditor() {
-        if (!Array.isArray(draft.selected) || draft.selected.length !== 20) return;
+        // Po rozpoczęciu sezonu korzystamy z tego samego składu, który został
+        // wybrany w drafcie. Jeżeli jakaś ścieżka gry chwilowo wyczyściła
+        // draft.selected, przywracamy zachowaną referencję do tego składu.
+        const seasonSelected = Array.isArray(draft.selected) && draft.selected.length === 20
+            ? draft.selected
+            : window.__seasonDraftSelected;
 
+        if (!Array.isArray(seasonSelected) || seasonSelected.length !== 20) {
+            console.warn("[Widzew Draft] Nie można otworzyć edytora składu sezonowego: brak 20 zawodników.");
+            return;
+        }
+
+        draft.selected = seasonSelected;
+        window.__seasonDraftSelected = draft.selected;
         window.__seasonSquadEditMode = true;
         finalSwapIndex = null;
         finishDraft();
@@ -2292,6 +2304,12 @@ function facePathForCandidate(card) {
 });
 
 function openSeasonScreen(season) {
+    // Zachowujemy dokładnie ten sam 20-osobowy skład wybrany w drafcie,
+    // aby można było wrócić do niego przed każdym kolejnym meczem sezonu.
+    if (Array.isArray(draft.selected) && draft.selected.length === 20) {
+        window.__seasonDraftSelected = draft.selected;
+    }
+
     const seasonValue = season || ((draft.mode === "player" || draft.mode === "gracz") ? "22/23" : draft.gameSeason || "");
     window.__seasonValue = seasonValue;
 
