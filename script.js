@@ -1933,6 +1933,12 @@ function facePathForCandidate(card) {
     }
 
     function openSeasonSquadEditor() {
+        // Zapamiętujemy dokładnie miejsce, z którego otwarto edytor.
+        // Po powrocie nie wolno tworzyć nowego sezonu ani resetować wyników.
+        window.__seasonSquadReturnRound = Number(seasonGameState?.currentRound || 1);
+        window.__seasonSquadReturnResults = Array.isArray(seasonGameState?.widzewResults)
+            ? seasonGameState.widzewResults
+            : [];
         // Po rozpoczęciu sezonu korzystamy z tego samego składu, który został
         // wybrany w drafcie. Jeżeli jakaś ścieżka gry chwilowo wyczyściła
         // draft.selected, przywracamy zachowaną referencję do tego składu.
@@ -1956,6 +1962,19 @@ function facePathForCandidate(card) {
     function closeSeasonSquadEditor() {
         window.__seasonSquadEditMode = false;
         finalSwapIndex = null;
+
+        // Wracamy do dokładnie tej kolejki, przed którą otwarto edytor.
+        // Zachowujemy dotychczasowe wyniki i stan sezonu.
+        if (seasonGameState) {
+            const returnRound = Number(window.__seasonSquadReturnRound);
+            if (Number.isFinite(returnRound) && returnRound > 0) {
+                seasonGameState.currentRound = returnRound;
+            }
+            if (Array.isArray(window.__seasonSquadReturnResults)) {
+                seasonGameState.widzewResults = window.__seasonSquadReturnResults;
+            }
+        }
+
         showScreen(seasonScreen);
         renderPlayableSeason();
     }
@@ -2244,7 +2263,7 @@ function facePathForCandidate(card) {
             ? `
                 <div class="draft-finished">EDYCJA SKŁADU SEZONOWEGO</div>
                 <div class="season-launch">
-                    <button id="closeSeasonSquadButton" class="season-launch-button" type="button">← WRÓĆ DO SEZONU</button>
+                    <button id="closeSeasonSquadButton" class="season-launch-button" type="button">← POWRÓT DO SEZONU</button>
                     <p>Zmiany dotyczą tylko jedenastki i ławki rezerwowych. Twój 20-osobowy skład pozostaje bez zmian.</p>
                 </div>`
             : `
