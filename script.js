@@ -2269,7 +2269,7 @@ function facePathForCandidate(card) {
             : `
                 <div class="draft-finished">DRAFT ZAKOŃCZONY</div>
                 <div class="season-launch">
-                    <button id="playSeasonButton" class="season-launch-button" type="button">${seasonButtonLabel}</button>
+                    <button id="playSeasonButton" class="season-launch-button" type="button" onclick="window.__openWidzewSeasonScreen(this)">${seasonButtonLabel}</button>
                     <p>Jeśli jesteś gotowy z wyborem swojego składu to pora podbić PKO Ekstraklasę.</p>
                 </div>`;
 
@@ -2377,7 +2377,13 @@ function openSeasonScreen(season) {
     if (window.__showScreen) window.__showScreen(document.getElementById("seasonChoiceScreen"));
 }
 
-window.__openWidzewSeasonScreen = function(season) {
+window.__openWidzewSeasonScreen = function(seasonOrButton) {
+    let season = seasonOrButton;
+    if (seasonOrButton && typeof seasonOrButton !== "string") {
+        const text = String(seasonOrButton.textContent || "");
+        const match = text.match(/ROZEGRAJ\s+SEZON\s+(.+)/i);
+        season = match ? match[1].trim() : "";
+    }
     return openSeasonScreen(season);
 };
 
