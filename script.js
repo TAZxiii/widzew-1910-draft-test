@@ -1942,12 +1942,43 @@ function facePathForCandidate(card) {
         // Po rozpoczęciu sezonu korzystamy z tego samego składu, który został
         // wybrany w drafcie. Jeżeli jakaś ścieżka gry chwilowo wyczyściła
         // draft.selected, przywracamy zachowaną referencję do tego składu.
-        const seasonSelected = Array.isArray(draft.selected) && draft.selected.length === 20
+        let seasonSelected = Array.isArray(draft.selected) && draft.selected.length === 20
             ? draft.selected
             : window.__seasonDraftSelected;
 
+        // Awaryjnie odtwarzamy wybór z tymczasowej bazy sezonowej. Dzięki temu
+        // przycisk SKŁAD nie jest zależny od tego, czy któraś warstwa sezonu
+        // wcześniej zmieniła referencję draft.selected.
+        if ((!Array.isArray(seasonSelected) || seasonSelected.length !== 20)
+            && window.widzewSeasonPlayerDB?.players?.length === 20) {
+            seasonSelected = window.widzewSeasonPlayerDB.players.map(p => {
+                const row = { ...(p.stats || {}) };
+                row["Imię"] = p.first || row["Imię"] || "";
+                row["Nazwisko"] = p.last || row["Nazwisko"] || "";
+                row["Pozycja"] = p.position || row["Pozycja"] || "";
+                row["Sezon"] = p.season || row["Sezon"] || window.__seasonValue || "";
+                const roleLabel = p.role || row["Pozycja"] || "";
+                let role = roleLabel;
+                if (p.slot === "bench") {
+                    const pos = String(row["Pozycja"] || "").toUpperCase().replace(/\s+/g, "");
+                    if (pos === "BR") role = "bench-br";
+                    else if (pos === "N") role = "bench-n";
+                    else if (pos === "ŚO" || pos === "SO") role = "bench-cb";
+                    else if (pos === "LO/PO" || pos === "LOPO") role = "bench-def";
+                    else if (pos.includes("ŚPD") || pos.includes("ŚP") || pos.includes("OP")) role = "bench-mid";
+                    else role = "bench-wing";
+                }
+                return {
+                    row,
+                    role,
+                    faceFolder: p.category || "",
+                    face: p.face || ""
+                };
+            });
+        }
+
         if (!Array.isArray(seasonSelected) || seasonSelected.length !== 20) {
-            console.warn("[Widzew Draft] Nie można otworzyć edytora składu sezonowego: brak 20 zawodników.");
+            console.warn("[Widzew Draft] Nie można otworzyć edytora składu sezonowego: brak 20 zawodników.", window.widzewSeasonPlayerDB);
             return;
         }
 
@@ -1958,6 +1989,14 @@ function facePathForCandidate(card) {
         finishDraft();
         showScreen(draftScreen);
     }
+
+    window.__openWidzewSeasonSquadEditor = function() {
+        try {
+            openSeasonSquadEditor();
+        } catch (error) {
+            console.error("[Widzew Draft] Błąd otwierania edytora składu sezonowego:", error);
+        }
+    };
 
     function closeSeasonSquadEditor() {
         window.__seasonSquadEditMode = false;
@@ -3408,7 +3447,7 @@ function renderRound(round) {
     document.getElementById("roundMatches").innerHTML=html;
     const actions=document.getElementById("roundActions");
     const lastRound = seasonGameState.widzewFixtures.length ? Number(seasonGameState.widzewFixtures[seasonGameState.widzewFixtures.length-1].kolejka) : 34;
-    const squadButton = `<button id="seasonSquadButton" class="season-secondary-button">👥 SKŁAD</button>`;
+    const squadButton = `<button id="seasonSquadButton" class="season-secondary-button" type="button" onclick="window.__openWidzewSeasonSquadEditor()">👥 SKŁAD</button>`;
     if(widzewPlayed) {
         if(round < lastRound) {
             actions.innerHTML = `<button id="nextRoundButton" class="season-main-button">NASTĘPNA KOLEJKA →</button>`;
