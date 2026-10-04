@@ -2276,21 +2276,30 @@ function facePathForCandidate(card) {
         if (seasonSquadEditMode) {
             document.getElementById("closeSeasonSquadButton")?.addEventListener("click", closeSeasonSquadEditor);
         } else {
-            document.getElementById("playSeasonButton")?.addEventListener("click", (event) => {
-                const button = event.currentTarget;
+            const playSeasonButton = document.getElementById("playSeasonButton");
+            if (playSeasonButton) {
+                // Ten handler jest przypisany bezpośrednio do przycisku.
+                // Nie polegamy tutaj na delegacji clicków z innych plików.
+                playSeasonButton.onclick = () => {
+                    // Przygotowanie bazy zawodników może działać równolegle.
+                    // Nie może jednak blokować przejścia do wyboru trybu sezonu.
+                    if (typeof window.prepareWidzewSeasonPlayerDB === "function") {
+                        window.prepareWidzewSeasonPlayerDB(playSeasonButton)
+                            .catch(error => {
+                                console.error("[Widzew Draft] Nie udało się przygotować składu sezonowego:", error);
+                            });
+                    }
 
-                // Nie blokujemy przejścia do wyboru trybu sezonu na czas pobierania
-                // sześciu baz zawodników. Baza tymczasowa jest przygotowywana
-                // asynchronicznie, a silnik meczu poczeka na nią przed startem.
-                if (typeof window.prepareWidzewSeasonPlayerDB === "function") {
-                    window.prepareWidzewSeasonPlayerDB(button)
-                        .catch(error => {
-                            console.error("[Widzew Draft] Nie udało się przygotować składu sezonowego:", error);
-                        });
-                }
-
-                openSeasonScreen(finalSeason);
-            });
+                    // Bezpośrednio ustawiamy ekran wyboru trybu.
+                    // To jest celowo niezależne od zewnętrznych listenerów.
+                    window.__seasonValue = finalSeason;
+                    const intro = document.getElementById("seasonChoiceIntro");
+                    if (intro) {
+                        intro.textContent = `Sezon ${finalSeason} · wybierz sposób rozegrania rozgrywek.`;
+                    }
+                    showScreen(seasonChoiceScreen);
+                };
+            }
         }
         if (!window.finalSquadAlertShown) {
             window.finalSquadAlertShown = true;
