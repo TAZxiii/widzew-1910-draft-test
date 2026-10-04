@@ -2276,7 +2276,16 @@ function facePathForCandidate(card) {
         if (seasonSquadEditMode) {
             document.getElementById("closeSeasonSquadButton")?.addEventListener("click", closeSeasonSquadEditor);
         } else {
-            document.getElementById("playSeasonButton")?.addEventListener("click", () => {
+            document.getElementById("playSeasonButton")?.addEventListener("click", async (event) => {
+                const button = event.currentTarget;
+                try {
+                    if (typeof window.prepareWidzewSeasonPlayerDB === "function") {
+                        await window.prepareWidzewSeasonPlayerDB(button);
+                    }
+                } catch (error) {
+                    console.error("[Widzew Draft] Nie udało się przygotować składu sezonowego:", error);
+                    return;
+                }
                 openSeasonScreen(finalSeason);
             });
         }
