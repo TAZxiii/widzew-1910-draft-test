@@ -213,6 +213,20 @@
         });
     };
 
+    // Awaryjny launcher: nawet jeśli główny listener przycisku nie zostanie
+    // podpięty, kliknięcie ma zawsze otworzyć wybór sposobu rozegrania sezonu.
+    document.addEventListener("click", event => {
+        const button = event.target?.closest?.("#playSeasonButton");
+        if (!button) return;
+        const seasonMatch = String(button.textContent || "").match(/ROZEGRAJ\s+SEZON\s+(.+)/i);
+        const season = seasonMatch ? seasonMatch[1].trim() : "22/23";
+        setTimeout(() => {
+            if (typeof window.__openWidzewSeasonScreen === "function") {
+                window.__openWidzewSeasonScreen(season);
+            }
+        }, 0);
+    }, false);
+
     window.getWidzewSeasonPlayerDB = function () {
         return window.widzewSeasonPlayerDB || null;
     };
