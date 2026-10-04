@@ -3455,7 +3455,7 @@ function renderRound(round) {
     document.getElementById("roundMatches").innerHTML=html;
     const actions=document.getElementById("roundActions");
     const lastRound = seasonGameState.widzewFixtures.length ? Number(seasonGameState.widzewFixtures[seasonGameState.widzewFixtures.length-1].kolejka) : 34;
-    const squadButton = `<button id="seasonSquadButton" class="season-secondary-button" type="button" onclick="window.__openWidzewSeasonSquadEditor()" onpointerup="window.__openWidzewSeasonSquadEditor()">👥 SKŁAD</button>`;
+    const squadButton = `<button id="seasonSquadButton" class="season-secondary-button" type="button" onclick="window.__openWidzewSeasonSquadEditor()">👥 SKŁAD</button>`;
     if(widzewPlayed) {
         if(round < lastRound) {
             actions.innerHTML = `<button id="nextRoundButton" class="season-main-button">NASTĘPNA KOLEJKA →</button>`;
