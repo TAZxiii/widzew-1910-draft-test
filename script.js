@@ -3343,17 +3343,17 @@ function renderRound(round) {
     const squadButton = `<button id="seasonSquadButton" class="season-secondary-button">👥 SKŁAD</button>`;
     if(widzewPlayed) {
         if(round < lastRound) {
-            actions.innerHTML = squadButton + `<button id="nextRoundButton" class="season-main-button">NASTĘPNA KOLEJKA →</button>`;
+            actions.innerHTML = `<button id="nextRoundButton" class="season-main-button">NASTĘPNA KOLEJKA →</button>`;
         } else {
-            actions.innerHTML = squadButton + `<button id="seasonFinishButton" class="season-main-button">ZAKOŃCZ SEZON</button>`;
+            actions.innerHTML = `<button id="seasonFinishButton" class="season-main-button">ZAKOŃCZ SEZON</button>`;
         }
     } else {
         actions.innerHTML = squadButton + `<button id="playMatchButton" class="season-main-button">ZAGRAJ MECZ</button>
                            <button id="simulateMatchButton" class="season-secondary-button">SYMULUJ MECZ</button>`;
+        document.getElementById("seasonSquadButton")?.addEventListener("click", () => {
+            openSeasonSquadEditor();
+        });
     }
-    document.getElementById("seasonSquadButton")?.addEventListener("click", () => {
-        openSeasonSquadEditor();
-    });
     document.getElementById("playMatchButton")?.addEventListener("click",()=>{
         // Do czasu wdrożenia właściwego ekranu meczu przycisk nie może pozostawiać
         // kolejki bez wyniku — wykonujemy tę samą symulację meczu.
