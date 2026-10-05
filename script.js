@@ -1026,6 +1026,9 @@ function formatSquadValue(value) {
     const sopicUnderstandParagraphs = sopicUnderstandModal?.querySelectorAll("p");
     let sopicCodeBuffer = "";
     let sopicCodeListener = null;
+    let sopicMobileInput = null;
+    let sopicMobileInputHandler = null;
+    let sopicMobileTapHandler = null;
     let sopicCodeReady = false;
     let sopicEggTriggered = false;
     let sopicUnderstandQuestion = 1;
@@ -1131,6 +1134,41 @@ function formatSquadValue(value) {
 
         document.addEventListener("keydown", onKeyDown);
         sopicCodeListener = () => document.removeEventListener("keydown", onKeyDown);
+
+        // Na telefonach nie ma fizycznej klawiatury, dlatego kod można wpisać
+        // przez niewidoczne pole tekstowe aktywowane dotknięciem grafiki WTM.
+        const isTouchDevice = window.matchMedia?.("(pointer: coarse)")?.matches || navigator.maxTouchPoints > 0;
+        if (isTouchDevice && wtmWelcomeImage) {
+            if (!sopicMobileInput) {
+                sopicMobileInput = document.createElement("input");
+                sopicMobileInput.type = "text";
+                sopicMobileInput.autocomplete = "off";
+                sopicMobileInput.autocapitalize = "none";
+                sopicMobileInput.spellcheck = false;
+                sopicMobileInput.inputMode = "text";
+                sopicMobileInput.setAttribute("aria-label", "Kod Sopicia");
+                sopicMobileInput.className = "sopic-mobile-code-input";
+                sopicMobileInputHandler = event => {
+                    if (!isSopicTrainer() || sopicEggTriggered) return;
+                    const letters = String(event.target.value || "").replace(/[^a-zA-Z]/g, "").toLowerCase();
+                    event.target.value = letters.slice(-5);
+                    sopicCodeBuffer = event.target.value;
+                    if (sopicCodeBuffer === "sopic") {
+                        sopicCodeBuffer = "";
+                        event.target.value = "";
+                        sopicCodeReady = true;
+                    }
+                };
+                sopicMobileInput.addEventListener("input", sopicMobileInputHandler);
+                wtmWelcomeModal?.appendChild(sopicMobileInput);
+            }
+
+            sopicMobileTapHandler = () => {
+                if (!isSopicTrainer() || sopicEggTriggered) return;
+                sopicMobileInput?.focus();
+            };
+            wtmWelcomeImage.addEventListener("click", sopicMobileTapHandler);
+        }
     };
 
     const disarmSopicEasterEgg = () => {
@@ -1138,6 +1176,15 @@ function formatSquadValue(value) {
         sopicCodeReady = false;
         sopicCodeListener?.();
         sopicCodeListener = null;
+
+        if (sopicMobileTapHandler && wtmWelcomeImage) {
+            wtmWelcomeImage.removeEventListener("click", sopicMobileTapHandler);
+            sopicMobileTapHandler = null;
+        }
+        if (sopicMobileInput) {
+            sopicMobileInput.value = "";
+            sopicMobileInput.blur();
+        }
     };
 
     closeSopicEasterEgg?.addEventListener("click", closeSopicVideo);
@@ -1235,6 +1282,19 @@ function formatSquadValue(value) {
 
     const sopicEasterEggStyle = document.createElement("style");
     sopicEasterEggStyle.textContent = `
+        .sopic-mobile-code-input {
+            position: fixed;
+            width: 1px;
+            height: 1px;
+            left: 1px;
+            bottom: 1px;
+            opacity: 0.01;
+            border: 0;
+            padding: 0;
+            margin: 0;
+            z-index: -1;
+        }
+
         #sopicEasterEggModal .sopic-easter-egg-card {
             width: min(900px, calc(100vw - 30px));
         }
